@@ -1,6 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { Button } from "~/components/ui/button";
+import { Outlet } from "@remix-run/react";
+import { MainNav } from "~/components/items/Navbar";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -12,11 +12,8 @@ export const meta: MetaFunction = () => {
 export default function Index() {
 	return (
 		<div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-			<h1>Welcome to Resume App.</h1>
-
-			<Link to={"/main"}>
-				<Button variant="default">Build Resume</Button>
-			</Link>
+			<MainNav />
+			<Outlet />
 		</div>
 	);
 }

@@ -25,6 +25,7 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { getTheme } = await themeSessionResolver(request);
+
 	return {
 		theme: getTheme(),
 	};
