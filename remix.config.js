@@ -6,7 +6,9 @@ export default {
 	// appDirectory: "app",
 	// assetsBuildDirectory: "public/build",
 	// publicPath: "/build/",
-	// serverBuildPath: "build/index.js",
+	serverModuleFormat: "esm",
+	serverPlatform: "node",
+	serverBuildPath: "build/index.js",
 	browserNodeBuiltinsPolyfill: {
 		modules: {
 			crypto: true,
