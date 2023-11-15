@@ -5,7 +5,6 @@ import type {
 } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { MainNav } from "~/components/items/Navbar";
-import { validateCSRF } from "~/utils/csrf.server";
 import { authenticator } from "~/utils/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

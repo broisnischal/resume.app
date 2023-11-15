@@ -1,5 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, useActionData } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
+import bcrypt from "bcryptjs";
+import { AuthenticityTokenInput } from "remix-utils/csrf/react";
 import { Button } from "~/components/ui/button";
 import {
 	Card,
@@ -11,9 +13,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authenticator } from "~/utils/auth.server";
-import bcrypt from "bcryptjs";
+import { validateCSRF } from "~/utils/csrf.server";
 import { prisma } from "~/utils/db.server";
-import { AuthenticityTokenInput } from "remix-utils/csrf/react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const user = await authenticator.isAuthenticated(request, {
@@ -24,11 +25,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: LoaderFunctionArgs) {
-	const formData = await request.formData();
-	const username = formData.get("username") as string;
-	const email = formData.get("email") as string;
-	const password = formData.get("password") as string;
-	const cpassword = formData.get("cpassword") as string;
+	await validateCSRF(request);
+
+	const form = await request.formData();
+	const username = form.get("username") as string;
+	const email = form.get("email") as string;
+	const password = form.get("password") as string;
+	const cpassword = form.get("cpassword") as string;
 
 	const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -38,25 +41,28 @@ export async function action({ request }: LoaderFunctionArgs) {
 		});
 	}
 
-	const user = await prisma.user.create({
+	await prisma.user.create({
 		data: {
 			username,
 			email,
-			password: hashedPassword,
+			password: {
+				create: {
+					hash: hashedPassword,
+				},
+			},
 		},
 	});
 
-	console.log(user);
-
-	return authenticator.authenticate("login", request, {
+	return await authenticator.authenticate("login", request, {
 		successRedirect: "/main",
+		context: {
+			formData: form,
+		},
 	});
 }
 
 export default function SignUp() {
-	const data = useActionData<typeof action>();
-
-	console.log(data);
+	// const data = useActionData<typeof action>();
 
 	return (
 		<div className="flex items-center justify-center min-h-screen">

@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export const action: ActionFunction = async ({ request }) => {
 	await validateCSRF(request);
 
-	return authenticator.authenticate("login", request, {
+	return await authenticator.authenticate("login", request, {
 		successRedirect: "/main",
 	});
 };
@@ -74,6 +74,13 @@ export default function Login() {
 						/>
 
 						<Button type="submit">Login</Button>
+
+						<div className="providers flex flex-col gap-3">
+							<Form action="/auth/google" method="post">
+								<Button>Login with Google</Button>
+							</Form>
+						</div>
+
 						<Link
 							className="block text-center text-sm underline text-gray-700 dark:text-gray-300"
 							to={"/"}
