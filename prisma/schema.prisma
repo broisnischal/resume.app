@@ -17,10 +17,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   image    UserImage?
-  password Password?
+  password String
   roles    Role[]
   sessions Session[]
   Resume   Resume[]
+  Password Password?
 }
 
 model Resume {

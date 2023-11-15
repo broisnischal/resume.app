@@ -1,6 +1,34 @@
-import type { MetaFunction } from "@remix-run/node";
+import type {
+	ActionFunction,
+	LoaderFunctionArgs,
+	MetaFunction,
+} from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { MainNav } from "~/components/items/Navbar";
+import { validateCSRF } from "~/utils/csrf.server";
+import { authenticator } from "~/utils/auth.server";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+	const user = await authenticator.isAuthenticated(request, {
+		failureRedirect: "/login",
+	});
+
+	return user;
+}
+
+export const action: ActionFunction = async ({ request }) => {
+	const form = await request.formData();
+	const action = form.get("action");
+
+	switch (action) {
+		case "logout": {
+			return await authenticator.logout(request, { redirectTo: "/login" });
+		}
+		default: {
+			return new Response("Invalid action", { status: 400 });
+		}
+	}
+};
 
 export const meta: MetaFunction = () => {
 	return [

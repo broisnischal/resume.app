@@ -1,5 +1,9 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import {
+	json,
+	type LinksFunction,
+	type LoaderFunctionArgs,
+} from "@remix-run/node";
 import styles from "~/tailwind.css";
 import {
 	Links,
@@ -17,6 +21,8 @@ import {
 	useTheme,
 } from "remix-themes";
 import { themeSessionResolver } from "./sessions.server";
+import { csrf } from "./utils/csrf.server";
+import { AuthenticityTokenProvider } from "remix-utils/csrf/react";
 
 export const links: LinksFunction = () => [
 	{ rel: "stylesheet", href: styles },
@@ -25,17 +31,29 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { getTheme } = await themeSessionResolver(request);
+	const [token, cookieHeader] = await csrf.commitToken();
 
-	return {
-		theme: getTheme(),
-	};
+	return json(
+		{
+			theme: getTheme(),
+			token,
+		},
+		{
+			headers: {
+				"set-cookie": cookieHeader as string,
+			},
+		},
+	);
 }
 
 export default function AppWithProviders() {
 	const data = useLoaderData<typeof loader>();
+
 	return (
 		<ThemeProvider specifiedTheme={data.theme} themeAction="/action/set-theme">
-			<App />
+			<AuthenticityTokenProvider token={data.token}>
+				<App />
+			</AuthenticityTokenProvider>
 		</ThemeProvider>
 	);
 }

@@ -1,8 +1,9 @@
 import type { Location } from "@remix-run/react";
-import { Link, useLocation } from "@remix-run/react";
+import { Form, Link, useLocation } from "@remix-run/react";
 import { cn } from "~/lib/utils";
 import { ModeToggle } from "../mode-toggle";
 import clsx from "clsx";
+import { Button } from "../ui/button";
 
 export function MainNav({
 	className,
@@ -56,8 +57,18 @@ export function MainNav({
 				</Link>
 			))}
 
-			<div className="m-auto">
+			<div className="m-auto flex gap-4">
 				<ModeToggle />
+				<Form method="post">
+					<Button
+						type="submit"
+						variant={"outline"}
+						name="action"
+						value="logout"
+					>
+						Logout
+					</Button>
+				</Form>
 			</div>
 		</nav>
 	);

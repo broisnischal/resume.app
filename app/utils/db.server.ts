@@ -1,22 +1,36 @@
+import { remember } from "@epic-web/remember";
 import { PrismaClient } from "@prisma/client";
+import chalk from "chalk";
 
-let db: PrismaClient;
+export const prisma = remember("prisma", () => {
+	// NOTE: if you change anything in this function you'll need to restart
+	// the dev server to see your changes.
 
-declare global {
-	// biome-ignore lint/style/noVar: <explanation>
-	var __db: PrismaClient | undefined;
-}
+	// Feel free to change this log threshold to something that makes sense for you
+	const logThreshold = 20;
 
-if (process.env.NODE_ENV === "production") {
-	db = new PrismaClient();
-	db.$connect();
-} else {
-	if (!global.__db) {
-		global.__db = new PrismaClient();
-		global.__db.$connect();
-	}
-
-	db = global.__db;
-}
-
-export { db };
+	const client = new PrismaClient({
+		log: [
+			{ level: "query", emit: "event" },
+			{ level: "error", emit: "stdout" },
+			{ level: "warn", emit: "stdout" },
+		],
+	});
+	client.$on("query", async (e) => {
+		if (e.duration < logThreshold) return;
+		const color =
+			e.duration < logThreshold * 1.1
+				? "green"
+				: e.duration < logThreshold * 1.2
+				? "blue"
+				: e.duration < logThreshold * 1.3
+				? "yellow"
+				: e.duration < logThreshold * 1.4
+				? "redBright"
+				: "red";
+		const dur = chalk[color](`${e.duration}ms`);
+		console.info(`prisma:query - ${dur} - ${e.query}`);
+	});
+	client.$connect();
+	return client;
+});
