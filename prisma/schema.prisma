@@ -42,6 +42,8 @@ model Resume {
   updatedAt   DateTime          @updatedAt
   userImageId String?
   NoteImage   ResumeUserImage[]
+
+  @@index([ownerId])
 }
 
 model ResumeUserImage {
@@ -164,4 +166,5 @@ model Connection {
   userId String
 
   @@unique([providerName, providerId])
+  @@index([userId])
 }
