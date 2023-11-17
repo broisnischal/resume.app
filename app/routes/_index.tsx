@@ -1,5 +1,6 @@
 import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import Features from "~/components/items/feature";
 import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction = () => {
@@ -12,7 +13,7 @@ export const meta: MetaFunction = () => {
 export default function Index() {
 	return (
 		<div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-			<section className="w-full h-screen py-12 md:py-24 lg:py-32 xl:py-48 bg-black">
+			<section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-black ">
 				<div className="container px-4 md:px-6">
 					<div className="grid gap-6 items-center">
 						<div className="flex flex-col justify-center space-y-4 text-center">
@@ -60,6 +61,8 @@ export default function Index() {
 					</div>
 				</div>
 			</section>
+
+			<Features />
 		</div>
 	);
 }

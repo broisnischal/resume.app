@@ -1,19 +1,27 @@
-import { Textarea } from "~/components/ui/textarea";
-import Markdown from "react-markdown";
-import React, { useState } from "react";
-import remarkGfm from "remark-gfm";
-import { Input } from "~/components/ui/input";
-import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
+import { Popover } from "@radix-ui/react-popover";
 import {
-	Delete,
-	DeleteIcon,
+	ActionFunction,
+	LoaderFunction,
+	LoaderFunctionArgs,
+	json,
+} from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { createStore, useStateMachine } from "little-state-machine";
+import {
+	Edit2Icon,
+	EditIcon,
 	Facebook,
 	Github,
 	Linkedin,
-	Trash,
+	TwitterIcon,
 	Youtube,
 } from "lucide-react";
+import React, { useState } from "react";
+import MarkDown from "~/components/items/markdown";
+
+import { Avatar, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -22,11 +30,123 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Progress } from "~/components/ui/progress";
+import { Textarea } from "~/components/ui/textarea";
+import { updateName, updateTitle } from "~/utils/resumeAction";
+
+createStore({
+	build: {
+		name: "",
+		title: "",
+	},
+});
+
+export const loader: LoaderFunction = async ({
+	request,
+}: LoaderFunctionArgs) => {
+	const programmingLanguages: string[] = [
+		"TypeScript",
+		"JavaScript",
+		"HTML",
+		"CSS",
+		"React",
+		"Next.js",
+		"Astro",
+		"Node.js",
+		"Flutter",
+		"C#",
+		"Python",
+		"Java",
+	];
+
+	const softSkills: string[] = [
+		"Communication",
+		"Team Collaboration",
+		"Problem Solving",
+		"Time Management",
+		"Adaptability",
+		"Critical Thinking",
+		"Creativity",
+		"Leadership",
+		"Emotional Intelligence",
+		"Active Listening",
+		"Conflict Resolution",
+		"Decision Making",
+	];
+
+	const techTopics: string[] = [
+		"TypeScript",
+		"React",
+		"Next.js",
+		"Node.js",
+		"Express.js",
+		"GraphQL",
+		"RESTful APIs",
+		"Database Design",
+		"MongoDB",
+		"PostgreSQL",
+		"Docker",
+		"Microservices Architecture",
+		"CI/CD",
+		"Authentication and Authorization",
+		"Web Security",
+		"Serverless Computing",
+		"Testing (Unit, Integration, E2E)",
+		"Performance Optimization",
+		"Design Patterns",
+		"DevOps",
+		"Agile Methodology",
+		"Git and Version Control",
+	];
+
+	return json({
+		programmingLanguages,
+		softSkills,
+		techTopics,
+	});
+};
 
 export default function Build() {
 	const [markdown, setMarkdown] = useState("# Hi, *Pluto*!");
 	const [name, setName] = useState("");
+
+	const { programmingLanguages, softSkills } = useLoaderData<typeof loader>();
+
+	const { actions, state, getState } = useStateMachine({
+		updateName,
+		updateTitle,
+	});
+
+	const socials = [
+		{
+			title: "Facebook",
+			icon: <Facebook />,
+			href: "https://www.facebook.com",
+		},
+		{
+			title: "Github",
+			icon: <Github />,
+			href: "https://www.github.com",
+		},
+		{
+			title: "Linkedin",
+			icon: <Linkedin />,
+			href: "https://www.linkedin.com",
+		},
+		{
+			title: "Youtube",
+			icon: <Youtube />,
+			href: "https://www.youtube.com",
+		},
+		{
+			title: "Twitter",
+			icon: <TwitterIcon />,
+			href: "https://www.twitter.com",
+		},
+	];
+
 	const [title, setTitle] = useState("");
 
 	const [file, setFile] = useState("");
@@ -49,11 +169,21 @@ export default function Build() {
 					<Input type="file" className="w-fit" onChange={handleFileChange} />
 					<div className="flex gap-3">
 						<Input
-							onChange={(e) => setName(e.target.value)}
+							onChange={(e) => {
+								actions.updateName({
+									name: e.target.value,
+								});
+							}}
+							value={state.build.name}
 							placeholder="Enter your name"
 						/>
 						<Input
-							onChange={(e) => setTitle(e.target.value)}
+							onChange={(e) => {
+								actions.updateTitle({
+									title: e.target.value,
+								});
+							}}
+							value={state.build.title}
 							placeholder="Enter your title"
 						/>
 					</div>
@@ -77,21 +207,6 @@ export default function Build() {
 						<Trash />
 					</Card> */}
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Software Engineer</CardTitle>
-							<CardDescription>
-								Managed up to 5 projects or tasks at a given time while under
-								pressure to meet weekly deadlines.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>Microsoft, 2015 - 2018</CardContent>
-
-						<CardFooter className="flex justify-between">
-							<Button variant="outline">Edit</Button>
-							<Button>Remove</Button>
-						</CardFooter>
-					</Card>
 					<Card className="w-full">
 						<CardHeader>
 							<CardTitle>Software Engineer</CardTitle>
@@ -107,10 +222,46 @@ export default function Build() {
 							<Button>Remove</Button>
 						</CardFooter>
 					</Card>
+					<div className="">
+						<Popover>
+							<PopoverTrigger>
+								<Button variant={"outline"}>Edit Socials</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								align="center"
+								className="flex gap-4 flex-col ml-12"
+							>
+								{socials.map((item) => (
+									<Card key={item.title}>
+										<CardHeader>
+											<CardTitle className="flex justify-between">
+												<h1>{item.title}</h1>
+
+												<EditIcon size={15} />
+											</CardTitle>
+											<CardDescription>{item.href}</CardDescription>
+										</CardHeader>
+									</Card>
+								))}
+							</PopoverContent>
+						</Popover>
+					</div>
+					<h1>Select Language</h1>
+
+					<div className="flex gap-4 flex-wrap">
+						{programmingLanguages.map((item, index) => (
+							<div
+								className="px-10 cursor-pointer bg-white/5 w-min"
+								key={index}
+							>
+								<h1>{item}</h1>
+							</div>
+						))}
+					</div>
 				</div>
 				<div className="preview-area h-fit py-10 flex-1 p-4 border rounded ">
 					<div className="heading flex flex-col gap-5 items-center my-10">
-						<Avatar className="w-24 h-24">
+						<Avatar className="w-24 h-24 -z-10">
 							{file ? (
 								<AvatarImage
 									alt="User Avatar"
@@ -123,7 +274,7 @@ export default function Build() {
 
 						<div className="div text-center flex flex-col gap-3">
 							<h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-3xl lg:text-4xl/none">
-								{name || "John Doe"}
+								{state.build.name || "John Doe"}
 							</h1>
 
 							<p className="balance mx-auto max-w-[700px] text-zinc-500 md:text-xl dark:text-zinc-400">
@@ -135,7 +286,7 @@ export default function Build() {
 								}}
 								className="text-xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 dark:from-purple-400 dark:to-red-500"
 							>
-								{title}
+								{state.build.title || "Full Stack Developer"}
 							</h2>
 
 							<div className="social-icons flex gap-4 items-center justify-center">
@@ -146,66 +297,21 @@ export default function Build() {
 							</div>
 						</div>
 					</div>
-					<Markdown
-						remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
-						components={{
-							h1: ({ node, ...props }) => (
-								<h1 className="text-2xl font-bold my-2" {...props} />
-							),
-							h2: ({ node, ...props }) => (
-								<h2 className="text-xl font-bold my-2" {...props} />
-							),
-							h3: ({ node, ...props }) => (
-								<h3 className="text-lg font-bold my-2" {...props} />
-							),
-							ul: ({ node, ...props }) => (
-								<ul className="list-disc list-inside" {...props} />
-							),
-							ol: ({ node, ...props }) => (
-								<ol className="list-decimal list-inside" {...props} />
-							),
-							// Add styles for other heading levels as needed
-						}}
-					>
-						{markdown}
-					</Markdown>
+
+					<MarkDown>{markdown}</MarkDown>
 
 					<div className="skills">
-						<div className="mt-4">
-							<p className="font-medium">React</p>
-
-							<div className="h-2 mt-1 bg-primary-foreground rounded">
-								<div
-									className="h-2 bg-primary rounded"
-									style={{
-										width: "80%",
-									}}
-								/>
-							</div>
+						<div className="mt-4 ">
+							<p className="font-medium mb-2">React</p>
+							<Progress value={70} />
 						</div>
-						<div className="mt-4">
-							<p className="font-medium">Typescript</p>
-
-							<div className="h-2 mt-1 bg-primary-foreground rounded">
-								<div
-									className="h-2 bg-primary rounded"
-									style={{
-										width: "70%",
-									}}
-								/>
-							</div>
+						<div className="mt-4 ">
+							<p className="font-medium mb-2">Typescript</p>
+							<Progress value={49} />
 						</div>
-						<div className="mt-4">
-							<p className="font-medium">Angular</p>
-
-							<div className="h-2 mt-1 bg-primary-foreground rounded">
-								<div
-									className="h-2 bg-primary rounded"
-									style={{
-										width: "30%",
-									}}
-								/>
-							</div>
+						<div className="mt-4 ">
+							<p className="font-medium mb-2">Python</p>
+							<Progress value={89} />
 						</div>
 					</div>
 				</div>

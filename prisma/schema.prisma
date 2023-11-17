@@ -13,11 +13,18 @@ datasource db {
   relationMode = "prisma"
 }
 
+enum UserType {
+  FREE
+  PRO
+}
+
 model User {
   id       String  @id @default(cuid())
   email    String  @unique
   username String  @unique
   name     String?
+
+  usertype UserType @default(FREE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -31,19 +38,35 @@ model User {
 }
 
 model Resume {
-  id      String @id @default(cuid())
-  title   String
-  content String
+  id          String  @id @default(cuid())
+  title       String
+  label       String
+  name        String?
+  designation String?
+  description String?
+  content     String?
+
+  public   Boolean @default(true)
+  template Boolean @default(false)
 
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId String
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  userImageId String?
-  NoteImage   ResumeUserImage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resumeUserImage ResumeUserImage[]
+  socials         Socials[]
 
   @@index([ownerId])
+}
+
+model Socials {
+  id       String  @id @default(cuid())
+  name     String
+  url      String
+  Resume   Resume? @relation(fields: [resumeId], references: [id])
+  resumeId String?
 }
 
 model ResumeUserImage {

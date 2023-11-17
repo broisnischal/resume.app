@@ -10,17 +10,40 @@ const authenticator = new Authenticator<User>(sessionStorage);
 
 const googleStrategy = new GoogleStrategy(
 	{
-		clientID: "YOUR_CLIENT_ID",
-		clientSecret: "YOUR_CLIENT_SECRET",
-		callbackURL: "https://example.com/auth/google/callback",
+		clientID: process.env.GOOGLE_CLIENT_ID!,
+		clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+		callbackURL: process.env.GOOGLE_CALLBACK_URL!,
 	},
 	async ({ accessToken, refreshToken, extraParams, profile }) => {
-		// Get the user data from your DB or API using the tokens and profile
-		const user = await prisma.user.findFirst({
+		const existsUser = await prisma.user.findFirst({
 			where: {
+				connection: {
+					some: {
+						providerId: profile.id,
+					},
+				},
 				email: profile.emails[0].value,
 			},
 		});
+
+		if (existsUser) {
+			console.log(existsUser);
+			return existsUser;
+		}
+
+		const user = await prisma.user.create({
+			data: {
+				username: profile.displayName,
+				email: profile.emails[0].value,
+				connection: {
+					create: {
+						providerId: profile.id,
+						providerName: "google",
+					},
+				},
+			},
+		});
+
 		return user;
 	},
 );
@@ -55,6 +78,6 @@ authenticator.use(
 	"login",
 );
 
-// authenticator.use(googleStrategy, "google");
+authenticator.use(googleStrategy, "google");
 
 export { authenticator };
