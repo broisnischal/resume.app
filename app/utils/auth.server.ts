@@ -5,6 +5,7 @@ import { FormStrategy } from "remix-auth-form";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db.server";
 import { GoogleStrategy } from "remix-auth-google";
+import { GitHubStrategy } from "remix-auth-github";
 
 const authenticator = new Authenticator<User>(sessionStorage);
 
@@ -79,5 +80,48 @@ authenticator.use(
 );
 
 authenticator.use(googleStrategy, "google");
+
+authenticator.use(
+	new GitHubStrategy(
+		{
+			clientID: process.env.GITHUB_CLIENT_ID!,
+			clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+			callbackURL: process.env.GITHUB_CALLBACK_URL!,
+		},
+		async ({ accessToken, refreshToken, extraParams, profile }) => {
+			const existsUser = await prisma.user.findFirst({
+				where: {
+					connection: {
+						some: {
+							providerId: profile.id,
+						},
+					},
+					email: profile.emails[0].value,
+				},
+			});
+
+			if (existsUser) {
+				console.log(existsUser);
+				return existsUser;
+			}
+
+			const user = await prisma.user.create({
+				data: {
+					username: profile.displayName,
+					email: profile.emails[0].value,
+					connection: {
+						create: {
+							providerId: profile.id,
+							providerName: "github",
+						},
+					},
+				},
+			});
+
+			return user;
+		},
+	),
+	"github",
+);
 
 export { authenticator };

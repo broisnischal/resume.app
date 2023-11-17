@@ -85,11 +85,11 @@ export default function Dashboard() {
 
 	return (
 		<div className="flex items-center flex-col mt-10 min-h-[calc(100vh-150px)]  gap-1">
-			<div className="resume flex flex-wrap gap-8">
+			<div className="resume flex flex-wrap max-w-[1200px] mx-auto justify-between gap-8">
 				{resumes.length > 0 ? (
 					resumes.map((item, index) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-						<Card key={index} className="w-[350px]">
+						<Card key={index} className="w-[360px]">
 							<CardHeader>
 								<CardTitle className="flex justify-between gap-4">
 									{item.title}{" "}
@@ -101,23 +101,23 @@ export default function Dashboard() {
 							</CardHeader>
 							<CardContent>
 								{/* <p>{item.label}</p> */}
-								<p>Resume is {item.public ? "Public" : "Private"}</p>
-								<p>
+								<div>Resume is {item.public ? "Public" : "Private"}</div>
+								<div>
 									{item.template
 										? "Availabel for template"
 										: "Not available for template"}
-								</p>
+								</div>
 							</CardContent>
 
 							<CardFooter>
 								<h1>{item.name}</h1>
-								<p className="text-zinc-300 flex justify-between w-full">
+								<div className="text-zinc-300 flex justify-between w-full">
 									<div>{moment(item.createdAt).fromNow()}</div>
 
 									<Link prefetch="intent" to={`/${item.label}`}>
 										<Button>Visit</Button>
 									</Link>
-								</p>
+								</div>
 							</CardFooter>
 						</Card>
 					))
