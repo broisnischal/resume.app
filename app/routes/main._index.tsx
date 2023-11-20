@@ -4,16 +4,18 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@radix-ui/react-popover";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, type ActionFunction } from "@remix-run/node";
+import type { LoaderFunctionArgs, ActionFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react";
 import {
 	EditIcon,
 	FolderOpen,
 	LayoutTemplate,
+	LayoutTemplateIcon,
 	PlusIcon,
 	Trash,
 } from "lucide-react";
+import moment from "moment";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
@@ -24,13 +26,22 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { authenticator } from "~/utils/auth.server";
 import { prisma } from "~/utils/db.server";
-import moment from "moment";
-import { Link1Icon } from "@radix-ui/react-icons";
 
 export const action: ActionFunction = async ({ request }) => {
 	const form = await request.formData();
@@ -94,8 +105,38 @@ export default function Dashboard() {
 								<CardTitle className="flex justify-between gap-4">
 									{item.title}{" "}
 									<div className="div flex gap-3">
-										<Trash size={15} className="cursor-pointer" />
-										<EditIcon size={15} />
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Trash size={15} className="cursor-pointer" />
+											</AlertDialogTrigger>
+											<AlertDialogContent className="w-[400px]">
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Are you sure to delete your Resume?
+													</AlertDialogTitle>
+													<Alert variant={"destructive"}>
+														Warning : This action is not reversible. Please be
+														certain.
+													</Alert>
+													<AlertDialogDescription>
+														To delete your resume type{" "}
+														<strong className="text-primary">
+															delete {item.label}
+														</strong>{" "}
+														and continue.
+													</AlertDialogDescription>
+													<Input type="text" />
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>Cancel</AlertDialogCancel>
+													<AlertDialogAction>Continue</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+
+										<Link prefetch="intent" to={`build/${item.label}`}>
+											<EditIcon size={15} />
+										</Link>
 									</div>
 								</CardTitle>
 							</CardHeader>
@@ -122,11 +163,19 @@ export default function Dashboard() {
 						</Card>
 					))
 				) : (
-					<h1>You do not have any resume..</h1>
+					<div className="flex items-center justify-center flex-col gap-4">
+						<h1 className="text-primary">You do not have any resume...</h1>
+						<Link prefetch="intent" to="/main/templates">
+							<Button variant={"outline"}>
+								<LayoutTemplateIcon size={15} className="mr-3" /> browse
+								templates
+							</Button>
+						</Link>
+					</div>
 				)}
 			</div>
 			<Popover>
-				<PopoverTrigger className="fixed top-2 right-2  z-[999]">
+				<PopoverTrigger className="fixed top-3 right-3  z-[999]">
 					<Button className="p-0 aspect-square " variant={"outline"}>
 						<PlusIcon />
 					</Button>

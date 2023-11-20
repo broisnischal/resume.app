@@ -18,11 +18,6 @@ export function MainNav({
 			alt: "main",
 		},
 		{
-			title: "Build Resume",
-			href: "/main/build",
-			alt: "build",
-		},
-		{
 			title: "Templates",
 			href: "/main/templates",
 			alt: "templates",
@@ -37,7 +32,7 @@ export function MainNav({
 	return (
 		<nav
 			className={cn(
-				"flex items-center sticky top-0 backdrop-blur-xl border-b-white/20 border-[1px] z-[998]  p-3 justify-center space-x-4 lg:space-x-6",
+				"flex items-center sticky top-0 backdrop-blur-xl border-b-secondary-foreground/20 border-[1px]  p-3 justify-center space-x-4 lg:space-x-6",
 				className,
 			)}
 			{...props}

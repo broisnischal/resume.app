@@ -40,7 +40,7 @@ model User {
 model Resume {
   id          String  @id @default(cuid())
   title       String
-  label       String
+  label       String  @unique
   name        String?
   designation String?
   description String?

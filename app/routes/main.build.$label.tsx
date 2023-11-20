@@ -9,7 +9,6 @@ import {
 import { useLoaderData } from "@remix-run/react";
 import { createStore, useStateMachine } from "little-state-machine";
 import {
-	Edit2Icon,
 	EditIcon,
 	Facebook,
 	Github,
