@@ -67,6 +67,8 @@ model Socials {
   url      String
   Resume   Resume? @relation(fields: [resumeId], references: [id])
   resumeId String?
+
+  @@index([resumeId])
 }
 
 model ResumeUserImage {

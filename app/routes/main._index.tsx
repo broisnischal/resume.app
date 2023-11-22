@@ -12,6 +12,7 @@ import {
 	FolderOpen,
 	LayoutTemplate,
 	LayoutTemplateIcon,
+	LoaderIcon,
 	PlusIcon,
 	Trash,
 } from "lucide-react";
@@ -42,36 +43,67 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { authenticator } from "~/utils/auth.server";
 import { prisma } from "~/utils/db.server";
+import { useEffect, useRef, useState } from "react";
 
 export const action: ActionFunction = async ({ request }) => {
 	const form = await request.formData();
-	const formData = Object.fromEntries(form);
+	const { _action, ...formData } = Object.fromEntries(form);
 
-	console.log(formData);
+	switch (_action) {
+		case "delete": {
+			console.log(formData);
+			const resumeId = form.get("id");
 
-	const user = await prisma.user.findUnique({
-		where: {
-			id: formData.userId as string,
-		},
-	});
+			const resume = await prisma.resume.findUnique({
+				where: {
+					id: resumeId as string,
+				},
+			});
 
-	if (!user) {
-		return new Response("User not found", {
-			status: 400,
-		});
+			if (!resume) {
+				return new Response("Resume not found", {
+					status: 400,
+				});
+			}
+
+			return await prisma.resume.delete({
+				where: {
+					id: resumeId as string,
+				},
+			});
+		}
+
+		case "create": {
+			const user = await prisma.user.findUnique({
+				where: {
+					id: formData.userId as string,
+				},
+			});
+
+			if (!user) {
+				return new Response("User not found", {
+					status: 400,
+				});
+			}
+
+			const resume = await prisma.resume.create({
+				data: {
+					title: formData.title as string,
+					label: formData.label as string,
+					public: formData.public === "on" ? true : false,
+					template:
+						formData.template && formData.template === "on" ? true : false,
+					ownerId: user.id,
+				},
+			});
+
+			return resume;
+		}
+
+		default: {
+			return null;
+		}
 	}
-
-	const resume = await prisma.resume.create({
-		data: {
-			title: formData.title as string,
-			label: formData.label as string,
-			public: formData.public === "on" ? true : false,
-			template: formData.template && formData.template === "on" ? true : false,
-			ownerId: user.id,
-		},
-	});
-
-	return resume;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -91,6 +123,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Dashboard() {
 	const { user, resumes } = useLoaderData<typeof loader>();
 
+	const [deleteInput, setDeleteInput] = useState("");
 	const navigation = useNavigation();
 	const state: "idle" | "submitting" | "loading" = navigation.state;
 
@@ -125,11 +158,32 @@ export default function Dashboard() {
 														</strong>{" "}
 														and continue.
 													</AlertDialogDescription>
-													<Input type="text" />
+													<Input
+														value={deleteInput}
+														onChange={(e) => setDeleteInput(e.target.value)}
+														type="text"
+													/>
 												</AlertDialogHeader>
 												<AlertDialogFooter>
 													<AlertDialogCancel>Cancel</AlertDialogCancel>
-													<AlertDialogAction>Continue</AlertDialogAction>
+													<Form method="post">
+														<input type="hidden" value={item.id} name="id" />
+														<Button
+															disabled={deleteInput !== `delete ${item.label}`}
+															type="submit"
+															name="_action"
+															value={"delete"}
+														>
+															{state === "submitting" ? (
+																<LoaderIcon
+																	size={14}
+																	className="animate-spin"
+																/>
+															) : (
+																"Delete"
+															)}
+														</Button>
+													</Form>
 												</AlertDialogFooter>
 											</AlertDialogContent>
 										</AlertDialog>
@@ -250,7 +304,12 @@ export default function Dashboard() {
 								<Button
 									type="submit"
 									form="create-resume"
-									disabled={user.usertype === "FREE" && resumes.length >= 1}
+									name="_action"
+									value={"create"}
+									disabled={
+										(user.usertype === "FREE" && resumes.length >= 1) ||
+										state === "submitting"
+									}
 								>
 									{state === "submitting" ? "Creating..." : "Create"}
 								</Button>

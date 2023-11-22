@@ -12,7 +12,7 @@ import {
 } from "@remix-run/react";
 import { LoaderIcon, SearchIcon } from "lucide-react";
 import moment from "moment";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import ResumeList from "~/components/items/resumelist";
 import {
 	Card,
@@ -49,8 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			template: true,
 		},
 	});
-	const url = new URL(request.url);
-	const q = url.searchParams.get("q");
+	const q = new URL(request.url).searchParams.get("q") || "";
 
 	return defer({
 		templateResumes,
@@ -98,14 +97,17 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Templates() {
 	const { templateResumes, q, totalNumbersOfresume } =
 		useLoaderData<typeof loader>();
+	const [inputvalue, setInputValue] = useState("");
 
 	const data = useActionData<typeof action>();
 
-	const [parmas] = useSearchParams();
 	const submit = useSubmit();
 	const fetcher = useFetcher();
-	const navigation = useNavigation();
 	const [searchParams, setSearchParams] = useSearchParams();
+
+	console.log(searchParams.get("q"));
+
+	const navigation = useNavigation();
 
 	const searching =
 		fetcher.state === "loading" || navigation.state === "submitting";
@@ -126,77 +128,85 @@ export default function Templates() {
 					}}
 					onKeyUpCapture={(e) => {
 						// if (e.key === "Enter") {
+
 						submit(e.currentTarget, { replace: true });
+
 						// }
 					}}
 				>
 					<input
-						role="search"
+						role="searchbox"
 						type="text"
 						className="outline-none border-none w-full bg-transparent text-primary"
 						name="q"
 						placeholder="browse for template"
-						defaultValue={parmas.get("q") || ""}
+						onChange={(e) => {}}
 					/>
 				</fetcher.Form>
 			</div>
 			<div className="flex flex-wrap max-w-[1200px] justify-center mx-auto gap-5">
-				{data?.searchedResume.length > 0 ? (
-					data?.searchedResume.map((item, index) => (
-						<div key={item.id}>
-							<Card className="w-[300px]">
-								<CardHeader>
-									<CardTitle>
-										<h1>{item.title}</h1>
-									</CardTitle>
-									<CardDescription>
-										<p>{item.label}</p>
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<p>{item.description}</p>
-								</CardContent>
-								<CardFooter className="flex justify-between">
-									<p>{moment(item.createdAt).fromNow()}</p>
-									<p> {item.owner.username}</p>
-								</CardFooter>
-							</Card>
-						</div>
-					))
+				{inputvalue.length >= 0 && !(data?.searchedResume.length === 0) ? (
+					data?.searchedResume.length > 0 ? (
+						data?.searchedResume.map((item, index) => (
+							<div key={item.id}>
+								<Card className="w-[300px]">
+									<CardHeader>
+										<CardTitle>
+											<h1>{item.title}</h1>
+										</CardTitle>
+										<CardDescription>
+											<p>{item.label}</p>
+										</CardDescription>
+									</CardHeader>
+									<CardContent>
+										<p>{item.description}</p>
+									</CardContent>
+									<CardFooter className="flex justify-between">
+										<p>{moment(item.createdAt).fromNow()}</p>
+										<p> {item.owner.username}</p>
+									</CardFooter>
+								</Card>
+							</div>
+						))
+					) : (
+						<Suspense
+							fallback={
+								<ResumeList totalNumberOfResume={totalNumbersOfresume} />
+							}
+						>
+							<Await resolve={templateResumes}>
+								{(resume) => (
+									<Await resolve={resume}>
+										{(data) =>
+											data.map((item) => (
+												<div key={item.id}>
+													<Card className="w-[300px]">
+														<CardHeader>
+															<CardTitle>
+																<h1>{item.title}</h1>
+															</CardTitle>
+															<CardDescription>
+																<p>{item.label}</p>
+															</CardDescription>
+														</CardHeader>
+														<CardContent>
+															<p>{item.description}</p>
+														</CardContent>
+														<CardFooter className="flex justify-between">
+															<p>{moment(item.createdAt).fromNow()}</p>
+															<p> {item.owner.username}</p>
+														</CardFooter>
+													</Card>
+												</div>
+											))
+										}
+									</Await>
+								)}
+							</Await>
+						</Suspense>
+					)
 				) : (
-					<Suspense
-						fallback={<ResumeList totalNumberOfResume={totalNumbersOfresume} />}
-					>
-						<Await resolve={templateResumes}>
-							{(resume) => (
-								<Await resolve={resume}>
-									{(data) =>
-										data.map((item) => (
-											<div key={item.id}>
-												<Card className="w-[300px]">
-													<CardHeader>
-														<CardTitle>
-															<h1>{item.title}</h1>
-														</CardTitle>
-														<CardDescription>
-															<p>{item.label}</p>
-														</CardDescription>
-													</CardHeader>
-													<CardContent>
-														<p>{item.description}</p>
-													</CardContent>
-													<CardFooter className="flex justify-between">
-														<p>{moment(item.createdAt).fromNow()}</p>
-														<p> {item.owner.username}</p>
-													</CardFooter>
-												</Card>
-											</div>
-										))
-									}
-								</Await>
-							)}
-						</Await>
-					</Suspense>
+					<div>No such result found</div>
 				)}
 			</div>
 		</section>
