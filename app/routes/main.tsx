@@ -39,6 +39,8 @@ export const meta: MetaFunction = () => {
 export default function Index() {
 	return (
 		<div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
+			<div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 filter blur-md animate-fadeIn opacity-5 pointer-events-none" />
+
 			<MainNav />
 			<Outlet />
 			<div className="footer text-center py-2">Created with ❤️ by nees</div>

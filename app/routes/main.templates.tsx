@@ -105,8 +105,6 @@ export default function Templates() {
 	const fetcher = useFetcher();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	console.log(searchParams.get("q"));
-
 	const navigation = useNavigation();
 
 	const searching =
@@ -114,7 +112,7 @@ export default function Templates() {
 
 	return (
 		<section className="min-h-[calc(100vh-150px)] flex flex-col gap-5  mt-5">
-			<div className="search w-[50vw] mx-auto flex gap-3 items-center border-primary/30 border-[1px] rounded-lg px-5 py-2">
+			<div className="search w-[50vw] [&:has(input:focus)]:border-primary/70 mx-auto flex gap-3 items-center border-primary/30 border-[1px] rounded-lg px-5 py-2">
 				{!searching ? (
 					<SearchIcon size={15} />
 				) : (
@@ -133,6 +131,7 @@ export default function Templates() {
 
 						// }
 					}}
+					className="w-full"
 				>
 					<input
 						role="searchbox"
