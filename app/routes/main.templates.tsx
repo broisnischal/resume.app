@@ -4,14 +4,16 @@ import {
 	Await,
 	Form,
 	useActionData,
+	useFetcher,
 	useLoaderData,
 	useNavigation,
 	useSearchParams,
 	useSubmit,
 } from "@remix-run/react";
-import { SearchIcon } from "lucide-react";
+import { LoaderIcon, SearchIcon } from "lucide-react";
 import moment from "moment";
 import { Suspense } from "react";
+import ResumeList from "~/components/items/resumelist";
 import {
 	Card,
 	CardContent,
@@ -41,12 +43,19 @@ export async function getResume() {
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const templateResumes = getResume();
+
+	const totalNumbersOfresume = await prisma.resume.count({
+		where: {
+			template: true,
+		},
+	});
 	const url = new URL(request.url);
 	const q = url.searchParams.get("q");
 
 	return defer({
 		templateResumes,
 		q,
+		totalNumbersOfresume,
 	});
 }
 
@@ -87,31 +96,41 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Templates() {
-	const { templateResumes, q } = useLoaderData<typeof loader>();
+	const { templateResumes, q, totalNumbersOfresume } =
+		useLoaderData<typeof loader>();
 
 	const data = useActionData<typeof action>();
 
 	const [parmas] = useSearchParams();
 	const submit = useSubmit();
+	const fetcher = useFetcher();
 	const navigation = useNavigation();
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	const searching =
-		navigation.location &&
-		new URLSearchParams(navigation.location.search).has("q");
+		fetcher.state === "loading" || navigation.state === "submitting";
 
 	return (
 		<section className="min-h-[calc(100vh-150px)] flex flex-col gap-5  mt-5">
-			{/* <div className="search w-[50vw] mx-auto flex gap-3 items-center border-primary/30 border-[1px] rounded-lg px-5 py-2">
-				<SearchIcon />
+			<div className="search w-[50vw] mx-auto flex gap-3 items-center border-primary/30 border-[1px] rounded-lg px-5 py-2">
+				{!searching ? (
+					<SearchIcon size={15} />
+				) : (
+					<LoaderIcon className="animate-spin" size={15} />
+				)}
 
-				<Form method="post">
+				<fetcher.Form
+					method="post"
+					onChange={(e) => {
+						setSearchParams({ q: e.currentTarget.q.value });
+					}}
+					onKeyUpCapture={(e) => {
+						// if (e.key === "Enter") {
+						submit(e.currentTarget, { replace: true });
+						// }
+					}}
+				>
 					<input
-						onChange={(event) => {
-							const isFirstSearch = q === null;
-							submit(event.currentTarget, {
-								replace: !isFirstSearch,
-							});
-						}}
 						role="search"
 						type="text"
 						className="outline-none border-none w-full bg-transparent text-primary"
@@ -119,9 +138,9 @@ export default function Templates() {
 						placeholder="browse for template"
 						defaultValue={parmas.get("q") || ""}
 					/>
-				</Form>
-			</div> */}
-			{/* <div className="flex flex-wrap max-w-[1200px] justify-center mx-auto gap-5">
+				</fetcher.Form>
+			</div>
+			<div className="flex flex-wrap max-w-[1200px] justify-center mx-auto gap-5">
 				{data?.searchedResume.length > 0 ? (
 					data?.searchedResume.map((item, index) => (
 						<div key={item.id}>
@@ -145,33 +164,41 @@ export default function Templates() {
 						</div>
 					))
 				) : (
-					<Suspense fallback={<div>Loading...</div>}>
+					<Suspense
+						fallback={<ResumeList totalNumberOfResume={totalNumbersOfresume} />}
+					>
 						<Await resolve={templateResumes}>
-							{(templateResumes) => {
-								return (
-									<div>
-										{templateResumes.map((item, index) => (
+							{(resume) => (
+								<Await resolve={resume}>
+									{(data) =>
+										data.map((item) => (
 											<div key={item.id}>
-												<h1>{item.title}</h1>
+												<Card className="w-[300px]">
+													<CardHeader>
+														<CardTitle>
+															<h1>{item.title}</h1>
+														</CardTitle>
+														<CardDescription>
+															<p>{item.label}</p>
+														</CardDescription>
+													</CardHeader>
+													<CardContent>
+														<p>{item.description}</p>
+													</CardContent>
+													<CardFooter className="flex justify-between">
+														<p>{moment(item.createdAt).fromNow()}</p>
+														<p> {item.owner.username}</p>
+													</CardFooter>
+												</Card>
 											</div>
-										))}
-									</div>
-								);
-							}}
+										))
+									}
+								</Await>
+							)}
 						</Await>
 					</Suspense>
 				)}
-			</div> */}
-
-			<Suspense fallback={<div>Loading...</div>}>
-				<Await resolve={templateResumes}>
-					{(resume) => (
-						<Await resolve={resume}>
-							{(data) => <div>{JSON.stringify(data)}</div>}
-						</Await>
-					)}
-				</Await>
-			</Suspense>
+			</div>
 		</section>
 	);
 }
