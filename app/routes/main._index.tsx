@@ -6,7 +6,13 @@ import {
 } from "@radix-ui/react-popover";
 import type { LoaderFunctionArgs, ActionFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+	Form,
+	Link,
+	useActionData,
+	useLoaderData,
+	useNavigation,
+} from "@remix-run/react";
 import {
 	EditIcon,
 	FolderOpen,
@@ -44,6 +50,7 @@ import { Switch } from "~/components/ui/switch";
 import { authenticator } from "~/utils/auth.server";
 import { prisma } from "~/utils/db.server";
 import { useEffect, useRef, useState } from "react";
+import { Toaster, toast } from "sonner";
 
 export const action: ActionFunction = async ({ request }) => {
 	const form = await request.formData();
@@ -123,12 +130,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Dashboard() {
 	const { user, resumes } = useLoaderData<typeof loader>();
 
+	const popref = useRef<HTMLDivElement>(null);
+	const [popoverClose, setPopoverClose] = useState(false);
 	const [deleteInput, setDeleteInput] = useState("");
 	const navigation = useNavigation();
 	const state: "idle" | "submitting" | "loading" = navigation.state;
 
 	return (
 		<div className="flex items-center flex-col mt-10 min-h-[calc(100vh-150px)]  gap-1">
+			<div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 filter blur-md animate-fadeIn opacity-5 pointer-events-none" />
+			<Toaster position="top-center" />
 			<div className="resume flex flex-wrap max-w-[1200px] mx-auto justify-between gap-8">
 				{resumes.length > 0 ? (
 					resumes.map((item, index) => (
@@ -229,7 +240,10 @@ export default function Dashboard() {
 				)}
 			</div>
 			<Popover>
-				<PopoverTrigger className="fixed top-3 right-3  z-[999]">
+				<PopoverTrigger
+					ref={popref as any}
+					className="fixed top-3 right-3  z-[999]"
+				>
 					<Button className="p-0 aspect-square " variant={"outline"}>
 						<PlusIcon />
 					</Button>
@@ -310,6 +324,9 @@ export default function Dashboard() {
 										(user.usertype === "FREE" && resumes.length >= 1) ||
 										state === "submitting"
 									}
+									onClick={() => {
+										toast.success("Resume Created Successfully!");
+									}}
 								>
 									{state === "submitting" ? "Creating..." : "Create"}
 								</Button>

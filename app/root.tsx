@@ -22,7 +22,6 @@ import {
 import { themeSessionResolver } from "./sessions.server";
 import { csrf } from "./utils/csrf.server";
 import { AuthenticityTokenProvider } from "remix-utils/csrf/react";
-import { StateMachineProvider } from "little-state-machine";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
@@ -49,9 +48,7 @@ export default function AppWithProviders() {
 	return (
 		<ThemeProvider specifiedTheme={data.theme} themeAction="/action/set-theme">
 			<AuthenticityTokenProvider token={data.token}>
-				<StateMachineProvider>
-					<App />
-				</StateMachineProvider>
+				<App />
 			</AuthenticityTokenProvider>
 		</ThemeProvider>
 	);

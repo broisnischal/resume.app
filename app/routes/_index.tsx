@@ -2,6 +2,7 @@ import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import Features from "~/components/items/feature";
 import { Button } from "~/components/ui/button";
+import { Toaster } from "sonner";
 
 export const meta: MetaFunction = () => {
 	return [

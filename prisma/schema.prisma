@@ -57,8 +57,19 @@ model Resume {
 
   resumeUserImage ResumeUserImage[]
   socials         Socials[]
+  skills          Skills[]
 
   @@index([ownerId])
+}
+
+model Skills {
+  id       String  @id @default(cuid())
+  name     String
+  value    Int
+  Resume   Resume? @relation(fields: [resumeId], references: [id])
+  resumeId String?
+
+  @@index([resumeId])
 }
 
 model Socials {

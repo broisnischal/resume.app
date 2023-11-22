@@ -2,23 +2,24 @@ import { AvatarFallback } from "@radix-ui/react-avatar";
 import { Popover } from "@radix-ui/react-popover";
 import {
 	ActionFunction,
+	ActionFunctionArgs,
 	LoaderFunction,
 	LoaderFunctionArgs,
 	json,
 } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { createStore, useStateMachine } from "little-state-machine";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import {
 	EditIcon,
 	Facebook,
 	Github,
 	Linkedin,
+	Plus,
 	TwitterIcon,
 	Youtube,
 } from "lucide-react";
 import React, { useState } from "react";
 import MarkDown from "~/components/items/markdown";
-
+import { z } from "zod";
 import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -33,18 +34,39 @@ import { Input } from "~/components/ui/input";
 import { PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Progress } from "~/components/ui/progress";
 import { Textarea } from "~/components/ui/textarea";
-import { updateName, updateTitle } from "~/utils/resumeAction";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import { Slider } from "~/components/ui/slider";
+import { prisma } from "~/utils/db.server";
 
-createStore({
-	build: {
-		name: "",
-		title: "",
-	},
-});
+export async function loader({ request, params }: LoaderFunctionArgs) {
+	const resume = await prisma.resume.findUnique({
+		where: {
+			label: params.label,
+		},
+	});
 
-export const loader: LoaderFunction = async ({
-	request,
-}: LoaderFunctionArgs) => {
+	const skills = await prisma.skills.findMany({
+		where: {
+			Resume: {
+				label: {
+					equals: params.label,
+				},
+			},
+		},
+	});
+
+	console.log(skills);
+
 	const programmingLanguages: string[] = [
 		"TypeScript",
 		"JavaScript",
@@ -104,19 +126,84 @@ export const loader: LoaderFunction = async ({
 		programmingLanguages,
 		softSkills,
 		techTopics,
+		resume,
+		skills,
 	});
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+	const resumeSchemaValidator = z.object({
+		name: z.string(),
+		title: z.string(),
+		designation: z.string(),
+		description: z.string(),
+		content: z.string(),
+	});
+
+	const skillValidator = z.object({
+		title: z.string().min(1),
+		level: z
+			.string()
+			.transform((value) => {
+				return parseInt(value);
+			})
+			.refine((value) => {
+				return value >= 0 && value <= 100;
+			}),
+		resumeId: z.string().min(1),
+	});
+
+	const { _action, ...values } = Object.fromEntries(await request.formData());
+
+	console.log(values);
+	console.log(_action);
+
+	switch (_action) {
+		case "add-skill": {
+			try {
+				const value = skillValidator.parse(values);
+
+				const newSkill = await prisma.skills.create({
+					data: {
+						name: value.title,
+						value: value.level,
+						resumeId: value.resumeId,
+					},
+				});
+				return newSkill;
+			} catch (error) {
+				console.log(error);
+				return json({
+					error: {
+						message: error.message,
+					},
+				});
+			}
+		}
+		default: {
+			return null;
+		}
+	}
+}
+
+const initialState = {
+	name: "",
+	title: "",
+	designation: "",
+	description: "",
+	content: "",
 };
 
 export default function Build() {
-	const [markdown, setMarkdown] = useState("# Hi, *Pluto*!");
-	const [name, setName] = useState("");
+	const [resume, setResume] = useState(initialState);
 
-	const { programmingLanguages, softSkills } = useLoaderData<typeof loader>();
+	const {
+		programmingLanguages,
+		resume: resumeData,
+		skills: skillsData,
+	} = useLoaderData<typeof loader>();
 
-	const { actions, state, getState } = useStateMachine({
-		updateName,
-		updateTitle,
-	});
+	const data = useActionData<typeof action>();
 
 	const socials = [
 		{
@@ -146,10 +233,18 @@ export default function Build() {
 		},
 	];
 
-	const [title, setTitle] = useState("");
+	const [skills, setSkills] = useState<{ name: string; level: number }[] | []>(
+		[],
+	);
 
 	const [file, setFile] = useState("");
-	const [description, setDescription] = useState("");
+
+	const handleInputChange = (
+		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+	) => {
+		const { name, value } = event.target;
+		setResume({ ...resume, [name]: value });
+	};
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		if (!event.target.files) return;
@@ -168,32 +263,26 @@ export default function Build() {
 					<Input type="file" className="w-fit" onChange={handleFileChange} />
 					<div className="flex gap-3">
 						<Input
-							onChange={(e) => {
-								actions.updateName({
-									name: e.target.value,
-								});
-							}}
-							value={state.build.name}
+							onChange={handleInputChange}
+							name="name"
 							placeholder="Enter your name"
 						/>
 						<Input
-							onChange={(e) => {
-								actions.updateTitle({
-									title: e.target.value,
-								});
-							}}
-							value={state.build.title}
+							onChange={handleInputChange}
+							name="title"
 							placeholder="Enter your title"
 						/>
 					</div>
 					<Textarea
+						name="description"
 						className=" min-h-[20vh] p-4 border rounded"
-						onChange={(e) => setDescription(e.target.value)}
+						onChange={handleInputChange}
 						placeholder="Add your bio description..."
 					/>
 					<Textarea
+						name="content"
 						className=" min-h-[50vh] p-4 border rounded"
-						onChange={(e) => setMarkdown(e.target.value)}
+						onChange={handleInputChange}
 						placeholder="Write your resume in Markdown..."
 					/>
 					{/* <Card>
@@ -205,6 +294,73 @@ export default function Build() {
 						</CardDescription>
 						<Trash />
 					</Card> */}
+
+					<AlertDialog>
+						<AlertDialogTrigger>
+							<Button className="w-full">
+								Add Skill <Plus size={15} />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									Give the title of your skill?
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									You can add your title and level in percentage to show up your
+									skill.
+								</AlertDialogDescription>
+
+								<Form
+									// onSubmit={(e) => {
+									// 	e.preventDefault();
+									// 	setSkills([
+									// 		...skills,
+									// 		{
+									// 			name: e.currentTarget.title.value,
+									// 			level: e.currentTarget.level.value,
+									// 		},
+									// 	]);
+									// }}
+									method="post"
+									id="add-skill"
+									className="flex flex-col gap-4"
+								>
+									<Input
+										placeholder="Enter your skill title, programming, singing, typescript"
+										name="title"
+									/>
+									<input
+										type="hidden"
+										name="resumeId"
+										defaultValue={resumeData.id}
+									/>
+									<Slider
+										className="w-full"
+										defaultValue={[60]}
+										max={100}
+										step={1}
+										name="level"
+									/>
+								</Form>
+							</AlertDialogHeader>
+
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogAction form="add-skill" id="add-skill">
+									<Button
+										id="add-skill"
+										name="_action"
+										value={"add-skill"}
+										form="add-skill"
+										variant={"outline"}
+									>
+										Add Skill <Plus size={15} />
+									</Button>
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 
 					<Card className="w-full">
 						<CardHeader>
@@ -221,6 +377,7 @@ export default function Build() {
 							<Button>Remove</Button>
 						</CardFooter>
 					</Card>
+
 					<div className="">
 						<Popover>
 							<PopoverTrigger>
@@ -273,11 +430,11 @@ export default function Build() {
 
 						<div className="div text-center flex flex-col gap-3">
 							<h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-3xl lg:text-4xl/none">
-								{state.build.name || "John Doe"}
+								{resume.name}
 							</h1>
 
 							<p className="balance mx-auto max-w-[700px] text-zinc-500 md:text-xl dark:text-zinc-400">
-								{description}
+								{resume.description}
 							</p>
 							<h2
 								style={{
@@ -285,7 +442,7 @@ export default function Build() {
 								}}
 								className="text-xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 dark:from-purple-400 dark:to-red-500"
 							>
-								{state.build.title || "Full Stack Developer"}
+								{resume.title}
 							</h2>
 
 							<div className="social-icons flex gap-4 items-center justify-center">
@@ -297,21 +454,15 @@ export default function Build() {
 						</div>
 					</div>
 
-					<MarkDown>{markdown}</MarkDown>
+					<MarkDown>{resume.content}</MarkDown>
 
-					<div className="skills">
-						<div className="mt-4 ">
-							<p className="font-medium mb-2">React</p>
-							<Progress value={70} />
-						</div>
-						<div className="mt-4 ">
-							<p className="font-medium mb-2">Typescript</p>
-							<Progress value={49} />
-						</div>
-						<div className="mt-4 ">
-							<p className="font-medium mb-2">Python</p>
-							<Progress value={89} />
-						</div>
+					<div className="skills ">
+						{skillsData.map((item) => (
+							<div key={item.id} className="mt-4 ">
+								<p className="font-medium mb-2 capitalize">{item.name}</p>
+								<Progress value={item.value} className="-z-10" />
+							</div>
+						))}
 					</div>
 				</div>
 			</div>
