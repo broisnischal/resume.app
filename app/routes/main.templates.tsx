@@ -29,7 +29,7 @@ export async function getResume() {
 		where: {
 			template: true,
 		},
-		take: 10,
+		take: 6,
 		include: {
 			owner: {
 				select: {
@@ -78,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			],
 			template: true,
 		},
-		take: 10,
+		take: 6,
 		include: {
 			owner: {
 				select: {
@@ -111,7 +111,7 @@ export default function Templates() {
 		fetcher.state === "loading" || navigation.state === "submitting";
 
 	return (
-		<section className="min-h-[calc(100vh-150px)] flex flex-col gap-5  mt-5">
+		<section className=" flex flex-col gap-5  mt-5">
 			<div className="search w-[50vw] [&:has(input:focus)]:border-primary/70 mx-auto flex gap-3 items-center border-primary/30 border-[1px] rounded-lg px-5 py-2">
 				{!searching ? (
 					<SearchIcon size={15} />
@@ -168,11 +168,7 @@ export default function Templates() {
 							</div>
 						))
 					) : (
-						<Suspense
-							fallback={
-								<ResumeList totalNumberOfResume={totalNumbersOfresume} />
-							}
-						>
+						<Suspense fallback={<ResumeList totalNumberOfResume={6} />}>
 							<Await resolve={templateResumes}>
 								{(resume) => (
 									<Await resolve={resume}>

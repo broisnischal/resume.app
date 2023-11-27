@@ -137,8 +137,8 @@ export default function Dashboard() {
 	const state: "idle" | "submitting" | "loading" = navigation.state;
 
 	return (
-		<div className="flex items-center flex-col mt-10 min-h-[calc(100vh-150px)]  gap-1">
-			<div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 filter blur-md animate-fadeIn opacity-5 pointer-events-none" />
+		<div className="flex items-center flex-col mt-10 min-h-[calc(100vh-200px)]  gap-1">
+			{/* <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 filter blur-md animate-fadeIn opacity-5 pointer-events-none" /> */}
 			<Toaster position="top-center" />
 			<div className="resume flex flex-wrap max-w-[1200px] mx-auto justify-between gap-8">
 				{resumes.length > 0 ? (

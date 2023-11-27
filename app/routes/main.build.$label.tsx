@@ -1,23 +1,30 @@
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { Popover } from "@radix-ui/react-popover";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
 	ActionFunction,
-	ActionFunctionArgs,
 	LoaderFunction,
-	LoaderFunctionArgs,
 	json,
+	redirect,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+	Form,
+	useActionData,
+	useFetcher,
+	useLoaderData,
+} from "@remix-run/react";
 import {
 	EditIcon,
 	Facebook,
 	Github,
 	Linkedin,
+	LoaderIcon,
 	Plus,
+	Trash,
 	TwitterIcon,
 	Youtube,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MarkDown from "~/components/items/markdown";
 import { z } from "zod";
 import { Avatar, AvatarImage } from "~/components/ui/avatar";
@@ -47,6 +54,10 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Slider } from "~/components/ui/slider";
 import { prisma } from "~/utils/db.server";
+import { Alert } from "~/components/ui/alert";
+import { Label } from "~/components/ui/label";
+import moment from "moment";
+import { useDebouncedCallback } from "use-debounce";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const resume = await prisma.resume.findUnique({
@@ -56,6 +67,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	});
 
 	const skills = await prisma.skills.findMany({
+		where: {
+			Resume: {
+				label: {
+					equals: params.label,
+				},
+			},
+		},
+	});
+
+	const works = await prisma.works.findMany({
 		where: {
 			Resume: {
 				label: {
@@ -128,16 +149,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		techTopics,
 		resume,
 		skills,
+		works,
 	});
 }
 
 export async function action({ request }: ActionFunctionArgs) {
 	const resumeSchemaValidator = z.object({
 		name: z.string(),
-		title: z.string(),
 		designation: z.string(),
 		description: z.string(),
 		content: z.string(),
+		label: z.string().min(1),
 	});
 
 	const skillValidator = z.object({
@@ -153,10 +175,24 @@ export async function action({ request }: ActionFunctionArgs) {
 		resumeId: z.string().min(1),
 	});
 
+	const workValidator = z.object({
+		title: z.string().min(1, {
+			message: "Title is required",
+		}),
+		company: z.string().min(1, {
+			message: "Title is required",
+		}),
+		desc: z.string().min(1, {
+			message: "Title is required",
+		}),
+		startDate: z.string(),
+		endDate: z.string(),
+		resumeId: z.string().min(1),
+	});
+
 	const { _action, ...values } = Object.fromEntries(await request.formData());
 
-	console.log(values);
-	console.log(_action);
+	console.log(_action, values);
 
 	switch (_action) {
 		case "add-skill": {
@@ -180,28 +216,102 @@ export async function action({ request }: ActionFunctionArgs) {
 				});
 			}
 		}
+		case "add-work": {
+			try {
+				const value = workValidator.parse(values);
+
+				const newWork = await prisma.works.create({
+					data: {
+						title: value.title,
+						company: value.company,
+						desc: value.desc,
+						startDate: new Date(value.startDate),
+						endDate: new Date(value.endDate),
+						resumeId: value.resumeId,
+					},
+				});
+
+				return newWork;
+			} catch (error) {
+				console.log(error);
+				return json({
+					error: {
+						message: error.message,
+					},
+				});
+			}
+		}
+		case "delete-work": {
+			const id = values.id as string;
+
+			const existswork = await prisma.works.findUnique({
+				where: {
+					id,
+				},
+			});
+
+			await prisma.works.delete({
+				where: {
+					id: existswork?.id,
+				},
+			});
+
+			return null;
+		}
+		case "fields": {
+			const value = resumeSchemaValidator.parse(values);
+
+			const updateResume = await prisma.resume.update({
+				where: {
+					label: value.label,
+				},
+				data: {
+					name: value.name,
+					designation: value.designation,
+					description: value.description,
+					content: value.content,
+				},
+			});
+
+			return updateResume;
+		}
 		default: {
 			return null;
 		}
 	}
 }
 
-const initialState = {
-	name: "",
-	title: "",
-	designation: "",
-	description: "",
-	content: "",
-};
-
 export default function Build() {
-	const [resume, setResume] = useState(initialState);
-
 	const {
 		programmingLanguages,
-		resume: resumeData,
+		resume: resumevalue,
 		skills: skillsData,
+		works,
 	} = useLoaderData<typeof loader>();
+
+	const resumeData: {
+		id: string;
+		title: string;
+		label: string;
+		name: string | null;
+		designation: string | null;
+		description: string | null;
+		content: string | null;
+		public: boolean;
+		template: boolean;
+		ownerId: string;
+		createdAt: Date;
+		updatedAt: Date;
+	} = resumevalue;
+
+	const initialState = {
+		name: resumeData.name === null ? "" : resumeData.name,
+		designation: resumeData.designation === null ? "" : resumeData.designation,
+		description: resumeData.description === null ? "" : resumeData.description,
+		content: resumeData.content === null ? "" : resumeData.content,
+	};
+
+	const [resume, setResume] = useState(initialState);
 
 	const data = useActionData<typeof action>();
 
@@ -256,45 +366,68 @@ export default function Build() {
 	//     console.log(file);
 	// }
 
+	const fetcher = useFetcher({ key: "resume" });
+
+	const debounced = useDebouncedCallback((e) => {
+		fetcher.submit(
+			{
+				_action: "fields",
+				...resume,
+				label: resumeData.label,
+			},
+			{
+				method: "post",
+			},
+		);
+	}, 1000);
+
 	return (
 		<div>
 			<div className="box flex gap-3 m-10">
 				<div className="flex flex-col gap-4  flex-1">
 					<Input type="file" className="w-fit" onChange={handleFileChange} />
-					<div className="flex gap-3">
-						<Input
+					<fetcher.Form
+						className="flex flex-col gap-3"
+						method="post"
+						name="resume"
+						id="resume"
+						onChange={(e) => debounced(e)}
+					>
+						<div className="flex gap-3 flex-wrap">
+							<Input
+								onChange={handleInputChange}
+								name="name"
+								defaultValue={resume.name || ""}
+								placeholder="Enter your name"
+							/>
+							<Input
+								onChange={handleInputChange}
+								name="designation"
+								defaultValue={resume.designation || ""}
+								placeholder="Enter your title"
+							/>
+						</div>
+						<Textarea
+							name="description"
+							className=" min-h-[20vh] p-4 border rounded"
 							onChange={handleInputChange}
-							name="name"
-							placeholder="Enter your name"
+							defaultValue={resume.description || ""}
+							placeholder="Add your bio description..."
 						/>
-						<Input
+						<Textarea
+							name="content"
+							className=" min-h-[50vh] p-4 border rounded"
 							onChange={handleInputChange}
-							name="title"
-							placeholder="Enter your title"
+							defaultValue={resume.content || ""}
+							placeholder="Write your resume in Markdown..."
 						/>
-					</div>
-					<Textarea
-						name="description"
-						className=" min-h-[20vh] p-4 border rounded"
-						onChange={handleInputChange}
-						placeholder="Add your bio description..."
-					/>
-					<Textarea
-						name="content"
-						className=" min-h-[50vh] p-4 border rounded"
-						onChange={handleInputChange}
-						placeholder="Write your resume in Markdown..."
-					/>
-					{/* <Card>
-						<CardTitle>Software Engineer</CardTitle>
-						<CardContent>Google</CardContent>
-						<CardDescription>
-							Managed up to 5 projects or tasks at a given time while under
-							pressure to meet weekly deadlines.
-						</CardDescription>
-						<Trash />
-					</Card> */}
-
+						<Button
+							type="submit"
+							name="_action"
+							value="fields"
+							className="hidden"
+						/>
+					</fetcher.Form>
 					<AlertDialog>
 						<AlertDialogTrigger>
 							<Button className="w-full">
@@ -362,21 +495,141 @@ export default function Build() {
 						</AlertDialogContent>
 					</AlertDialog>
 
-					<Card className="w-full">
-						<CardHeader>
-							<CardTitle>Software Engineer</CardTitle>
-							<CardDescription>
-								Managed up to 5 projects or tasks at a given time while under
-								pressure to meet weekly deadlines.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>Microsoft, 2015 - 2018</CardContent>
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button className="w-fit" variant={"outline"}>
+								Add Work <Plus size={15} />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent className="w-[400px]">
+							<AlertDialogHeader>
+								<AlertDialogTitle>Are your work</AlertDialogTitle>
 
-						<CardFooter className="flex justify-between">
-							<Button variant="outline">Edit</Button>
-							<Button>Remove</Button>
-						</CardFooter>
-					</Card>
+								<AlertDialogDescription>
+									add your work{" "}
+									<strong className="text-primary">experience </strong>.
+								</AlertDialogDescription>
+
+								<Form
+									method="post"
+									id="add-work"
+									className="flex flex-col gap-4"
+								>
+									<Input
+										// onChange={(e) => setDeleteInput(e.target.value)}
+										type="text"
+										name="title"
+										placeholder="Work Title"
+									/>
+									<Input
+										// onChange={(e) => setDeleteInput(e.target.value)}
+										type="text"
+										name="company"
+										placeholder="Company Name"
+									/>
+									<Textarea name="desc" placeholder="Short work description" />
+									<Label htmlFor="startDate">Start Date</Label>
+									<Input
+										placeholder="Start Date"
+										type="date"
+										name="startDate"
+										id="startDate"
+										required
+									/>
+									<input
+										type="hidden"
+										name="resumeId"
+										defaultValue={resumeData.id}
+									/>
+									<Label htmlFor="endDate">End Date</Label>
+									<Input placeholder="End Date" type="date" name="endDate" />
+								</Form>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								{/* <Form method="post">
+									<input type="hidden" value={item.id} name="id" />
+									<Button
+										disabled={deleteInput !== `delete ${item.label}`}
+										type="submit"
+										name="_action"
+										value={"delete"}
+									>
+										{state === "submitting" ? (
+											<LoaderIcon size={14} className="animate-spin" />
+										) : (
+											"Delete"
+										)}
+									</Button>
+								</Form> */}
+								<AlertDialogAction form="add-skill" id="add-skill">
+									<Button
+										id="add-work"
+										name="_action"
+										value={"add-work"}
+										form="add-work"
+									>
+										Save work
+									</Button>
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+
+					{works.map((item) => (
+						<Card className="w-full" key={item.id}>
+							<CardHeader>
+								<CardTitle>{item.title}</CardTitle>
+								<CardDescription>{item.desc}</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<strong>{item.company}</strong> |{" "}
+								{moment(item.startDate).format("LL")} -{" "}
+								{moment(item.endDate).format("LL")}
+							</CardContent>
+
+							<CardFooter className="flex justify-between">
+								<Button variant="outline">Edit</Button>
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="outline">Delete</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												Are you absolutely sure?
+											</AlertDialogTitle>
+											<AlertDialogDescription>
+												This action cannot be undone. This will permanently
+												delete your work experience from resume.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancel</AlertDialogCancel>
+
+											<AlertDialogAction>
+												<Form method="post">
+													<input type="hidden" value={item.id} name="id" />
+													<Button
+														type="submit"
+														name="_action"
+														value={"delete-work"}
+													>
+														{/* {state === "submitting" ? (
+															<LoaderIcon size={14} className="animate-spin" />
+														) : (
+															"Continue"
+														)} */}
+														Continue
+													</Button>
+												</Form>
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</CardFooter>
+						</Card>
+					))}
 
 					<div className="">
 						<Popover>
