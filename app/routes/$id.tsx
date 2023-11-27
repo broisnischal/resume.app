@@ -30,9 +30,7 @@ import moment from "moment";
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const id = params.id!;
 
-	console.log(id);
-
-	const isUserLoggedIn = await authenticator.isAuthenticated(request);
+	// const isUserLoggedIn = await authenticator.isAuthenticated(request);
 
 	const resume = await prisma.resume.findUnique({
 		where: {
