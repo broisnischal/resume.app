@@ -695,7 +695,7 @@ export default function Build() {
 								}}
 								className="text-xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 dark:from-purple-400 dark:to-red-500"
 							>
-								{resume.title}
+								{resume.designation}
 							</h2>
 
 							<div className="social-icons flex gap-4 items-center justify-center">

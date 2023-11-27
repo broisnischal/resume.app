@@ -43,8 +43,8 @@ model Resume {
   label       String  @unique
   name        String?
   designation String?
-  description String?
-  content     String?
+  description String? @db.LongText
+  content     String? @db.LongText
 
   public   Boolean @default(true)
   template Boolean @default(false)
