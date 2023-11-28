@@ -14,6 +14,7 @@ import {
 	useLoaderData,
 } from "@remix-run/react";
 import {
+	Cross,
 	EditIcon,
 	Facebook,
 	Github,
@@ -22,6 +23,7 @@ import {
 	Plus,
 	Trash,
 	TwitterIcon,
+	X,
 	Youtube,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -90,20 +92,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	console.log(skills);
 
-	const programmingLanguages: string[] = [
-		"TypeScript",
-		"JavaScript",
-		"HTML",
-		"CSS",
-		"React",
-		"Next.js",
-		"Astro",
-		"Node.js",
-		"Flutter",
-		"C#",
-		"Python",
-		"Java",
-	];
+	const programmingLanguages = await prisma.programmingLanguages.findMany({
+		where: {
+			Resume: {
+				label: {
+					equals: params.label,
+				},
+			},
+		},
+	});
+
+	const allprogramminglanguages = await prisma.programmingLanguages.findMany();
 
 	const softSkills: string[] = [
 		"Communication",
@@ -147,6 +146,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	return json({
 		programmingLanguages,
+		allprogramminglanguages,
 		softSkills,
 		techTopics,
 		resume,
@@ -277,6 +277,30 @@ export async function action({ request }: ActionFunctionArgs) {
 
 			return updateResume;
 		}
+		case "add-tag": {
+			const tagid = values.tag as string;
+
+			const tag = await prisma.programmingLanguages.findUnique({
+				where: {
+					id: tagid,
+				},
+			});
+
+			const addtag = await prisma.resume.update({
+				where: {
+					label: values.label as string,
+				},
+				data: {
+					programmingLanguages: {
+						connect: {
+							id: tag?.id,
+						},
+					},
+				},
+			});
+
+			return addtag;
+		}
 		default: {
 			return null;
 		}
@@ -286,10 +310,16 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Build() {
 	const {
 		programmingLanguages,
+		allprogramminglanguages,
 		resume: resumevalue,
 		skills: skillsData,
 		works,
+		softSkills,
+		techTopics,
 	} = useLoaderData<typeof loader>();
+
+	console.log(allprogramminglanguages);
+	console.log(programmingLanguages);
 
 	const resumeData: {
 		id: string;
@@ -345,6 +375,8 @@ export default function Build() {
 		},
 	];
 
+	const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
 	const [skills, setSkills] = useState<{ name: string; level: number }[] | []>(
 		[],
 	);
@@ -373,6 +405,39 @@ export default function Build() {
 	// }
 
 	const fetcher = useFetcher({ key: "resume" });
+	const tagfetcher = useFetcher({ key: "tags" });
+
+	const handleTagClick = (tag: string) => {
+		if (selectedTags.includes(tag)) {
+			// setSelectedTags((prevTags) =>
+			// prevTags.filter((selectedTag) => selectedTag !== tag),
+			// );
+			console.log(tag);
+
+			tagfetcher.submit(
+				{
+					_action: "delete-tag",
+					tag,
+					label: resumeData.label,
+				},
+				{
+					method: "post",
+				},
+			);
+		} else {
+			setSelectedTags((prevTags) => [...prevTags, tag]);
+			tagfetcher.submit(
+				{
+					_action: "add-tag",
+					tag,
+					label: resumeData.label,
+				},
+				{
+					method: "post",
+				},
+			);
+		}
+	};
 
 	const debounced = useDebouncedCallback((e) => {
 		fetcher.submit(
@@ -704,15 +769,57 @@ export default function Build() {
 							</PopoverContent>
 						</Popover>
 					</div>
+
+					<div className="flex flex-wrap gap-2">
+						<div className="inline-flex bg-secondary overflow-hidden items-center px-2.5 py-0.2 rounded-full text-sm font-medium">
+							English
+							<X size={16} />
+						</div>
+
+						<Button size="sm" variant="outline">
+							Add Language
+						</Button>
+					</div>
+
 					<h1>Select Language</h1>
 
 					<div className="flex gap-4 flex-wrap">
-						{programmingLanguages.map((item, index) => (
+						{allprogramminglanguages.map((item, index) => (
+							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 							<div
-								className="px-10 cursor-pointer bg-white/5 w-min"
-								key={index}
+								key={item.id}
+								onClick={() => handleTagClick(item.id)}
+								className={` lowercase cursor-pointer px-[1rem] tracking-wide  font-bold select-none border-[1px]  rounded-full ${
+									selectedTags.includes(item.name)
+										? "bg-primary text-white dark:text-black "
+										: "bg-secondary/10 "
+								}`}
 							>
-								<h1>{item.toLocaleLowerCase()}</h1>
+								#{item.slug}
+							</div>
+						))}
+					</div>
+					<h1 className="text-2xl">Soft Skills </h1>
+
+					<div className="flex gap-4 flex-wrap">
+						{softSkills.map((item, index) => (
+							// <div
+							// 	className="px-10 cursor-pointer bg-white/5 w-min"
+							// 	key={index}
+							// >
+							// 	<h1>{item.toLocaleLowerCase()}</h1>
+							// </div>
+							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+							<div
+								key={item}
+								onClick={() => handleTagClick(item)}
+								className={` lowercase cursor-pointer px-[1rem] tracking-wide  font-bold select-none border-[1px]  rounded-full ${
+									selectedTags.includes(item)
+										? "bg-primary text-white dark:text-black "
+										: "bg-secondary/10 "
+								}`}
+							>
+								#{item}
 							</div>
 						))}
 					</div>

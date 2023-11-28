@@ -13,6 +13,7 @@ import {
 import { LoaderIcon, SearchIcon } from "lucide-react";
 import moment from "moment";
 import { Suspense, useState } from "react";
+import { toast } from "sonner";
 import ResumeList from "~/components/items/resumelist";
 import {
 	Card,
@@ -143,6 +144,8 @@ export default function Templates() {
 					/>
 				</fetcher.Form>
 			</div>
+		
+			
 			<div className="flex flex-wrap max-w-[1200px] justify-center mx-auto gap-5">
 				{inputvalue.length >= 0 && !(data?.searchedResume.length === 0) ? (
 					data?.searchedResume.length > 0 ? (

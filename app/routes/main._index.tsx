@@ -183,15 +183,17 @@ export default function Dashboard() {
 															type="submit"
 															name="_action"
 															value={"delete"}
+															variant="destructive"
 														>
-															{state === "submitting" ? (
-																<LoaderIcon
-																	size={14}
-																	className="animate-spin"
-																/>
-															) : (
-																"Delete"
+															{state!== 'submitting' ? (
+																<Trash size={14} />
+															): (
+																<LoaderIcon size={14} className="animate-spin" />
 															)}
+															<span className="ml-2">
+															Delete
+
+															</span>
 														</Button>
 													</Form>
 												</AlertDialogFooter>

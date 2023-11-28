@@ -40,15 +40,18 @@ export const meta: MetaFunction = () => {
 export default function Index() {
 	return (
 		<div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-			<Toaster />
 			<MainNav />
 			<Outlet />
+
+			<Toaster position="bottom-right" />
+
 			<div className="footer text-center py-2 mt-10">
 				Created with &lt;3 |{" "}
 				<strong>
 					<Link to={"/"}>resume.app</Link>
 				</strong>
 			</div>
+			
 		</div>
 	);
 }

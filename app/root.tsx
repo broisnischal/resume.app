@@ -22,12 +22,15 @@ import {
 import { themeSessionResolver } from "./sessions.server";
 import { csrf } from "./utils/csrf.server";
 import { AuthenticityTokenProvider } from "remix-utils/csrf/react";
+import GlobalLoading from "./components/global-loading";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { getTheme } = await themeSessionResolver(request);
 	const [token, cookieHeader] = await csrf.commitToken();
+
+	console.log(token);
 
 	return json(
 		{
@@ -68,6 +71,7 @@ export function App() {
 				<Links />
 			</head>
 			<body>
+				<GlobalLoading />
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />
