@@ -33,10 +33,33 @@ export default function Index() {
 									your matching degination resume and create your own via
 									templating it!
 								</p>
+
+								<div className="m-auto flex items-center justify-center">
+									<Link to={"/main"} prefetch="viewport">
+										<div className="group relative overflow-hidden rounded-full bg-white/10 px-3 py-1 duration-300 w-fit border-[1px] hover:border-[#31bdc6] cursor-pointer border-secondary/30">
+											{/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+											<svg
+												className="mr-1 inline-block h-4 w-4 fill-[#31bdc6]"
+												viewBox="4 4 48 48"
+												xmlns="http://www.w3.org/2000/svg"
+											>
+												<path d="m19.2 36.4-4.75-10.45L4 21.2l10.45-4.75L19.2 6l4.75 10.45L34.4 21.2l-10.45 4.75ZM36.4 42l-2.35-5.25-5.25-2.35 5.25-2.4 2.35-5.2 2.4 5.2 5.2 2.4-5.2 2.35Z" />
+											</svg>
+											<span
+												style={{
+													WebkitBackgroundClip: "text",
+												}}
+												className="select-none bg-gradient-to-r from-[#31bdc6] to-[#3178c6]   bg-clip-text text-transparent duration-300"
+											>
+												Start Building Resume{" "}
+											</span>
+										</div>
+									</Link>
+								</div>
 							</div>
-							<Link to={"/main"}>
+							{/* <Link to={"/main"}>
 								<Button variant="default">Start Building Resume</Button>
-							</Link>
+							</Link> */}
 							{/* <div className="w-full max-w-sm space-y-2 mx-auto">
 								<form className="flex space-x-2">
 									<Input

@@ -2,33 +2,20 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// datasource db {
-//   provider = "sqlite"
-//   url      = env("DATABASE_URL")
-// }
-
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
-enum UserType {
-  FREE
-  PRO
-}
-
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  username String  @unique
-  name     String?
-
-  usertype UserType @default(FREE)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id         String       @id @default(cuid())
+  email      String       @unique
+  name       String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  username   String       @unique
+  usertype   UserType     @default(FREE)
   image      UserImage?
   roles      Role[]
   sessions   Session[]
@@ -38,23 +25,19 @@ model User {
 }
 
 model Resume {
-  id          String  @id @default(cuid())
-  title       String
-  label       String  @unique
-  name        String?
-  designation String?
-  description String? @db.LongText
-  content     String? @db.LongText
-
-  public   Boolean @default(true)
-  template Boolean @default(false)
-
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ownerId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id              String            @id @default(cuid())
+  title           String
+  content         String?           @db.LongText
+  ownerId         String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  description     String?           @db.LongText
+  designation     String?
+  name            String?
+  public          Boolean           @default(true)
+  template        Boolean           @default(false)
+  label           String            @unique
+  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   resumeUserImage ResumeUserImage[]
   socials         Socials[]
   skills          Skills[]
@@ -70,8 +53,8 @@ model Works {
   desc      String
   startDate DateTime
   endDate   DateTime
-  Resume    Resume?  @relation(fields: [resumeId], references: [id])
   resumeId  String?
+  Resume    Resume?  @relation(fields: [resumeId], references: [id])
 
   @@index([resumeId])
 }
@@ -80,8 +63,8 @@ model Skills {
   id       String  @id @default(cuid())
   name     String
   value    Int
-  Resume   Resume? @relation(fields: [resumeId], references: [id])
   resumeId String?
+  Resume   Resume? @relation(fields: [resumeId], references: [id])
 
   @@index([resumeId])
 }
@@ -90,114 +73,93 @@ model Socials {
   id       String  @id @default(cuid())
   name     String
   url      String
-  Resume   Resume? @relation(fields: [resumeId], references: [id])
   resumeId String?
+  Resume   Resume? @relation(fields: [resumeId], references: [id])
 
   @@index([resumeId])
 }
 
 model ResumeUserImage {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   altText     String?
   contentType String
   blob        Bytes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  resumeId String
-
-  // non-unique foreign key
   @@index([resumeId])
 }
 
 model UserImage {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   altText     String?
   contentType String
   blob        Bytes
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Password {
-  hash String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hash   String
   userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Session {
   id             String   @id @default(cuid())
   expirationDate DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String
-
-  // non-unique foreign key
   @@index([userId])
 }
 
 model Permission {
-  id          String @id @default(cuid())
-  action      String // e.g. create, read, update, delete
-  entity      String // e.g. note, user, etc.
-  access      String // e.g. own or any
-  description String @default("")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  roles Role[]
+  id          String   @id @default(cuid())
+  action      String
+  entity      String
+  access      String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
 
   @@unique([action, entity, access])
 }
 
 model Role {
-  id          String @id @default(cuid())
-  name        String @unique
-  description String @default("")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   users       User[]
   permissions Permission[]
 }
 
 model Verification {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
   /// The type of verification, e.g. "email" or "phone"
-  type String
-
+  type      String
   /// The thing we're trying to verify, e.g. a user's email or phone number
-  target String
-
+  target    String
   /// The secret key used to generate the otp
-  secret String
-
+  secret    String
   /// The algorithm used to generate the otp
   algorithm String
-
   /// The number of digits in the otp
-  digits Int
-
+  digits    Int
   /// The number of seconds the otp is valid for
-  period Int
-
+  period    Int
   /// The valid characters for the otp
-  charSet String
-
+  charSet   String
   /// When it's safe to delete this verification
   expiresAt DateTime?
 
@@ -205,16 +167,37 @@ model Verification {
 }
 
 model Connection {
-  id           String @id @default(cuid())
+  id           String   @id @default(cuid())
   providerName String
   providerId   String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([providerName, providerId])
   @@index([userId])
+}
+
+model PermissionToRole {
+  A String
+  B String
+
+  @@unique([A, B], map: "_PermissionToRole_AB_unique")
+  @@index([B], map: "_PermissionToRole_B_index")
+  @@map("_PermissionToRole")
+}
+
+model RoleToUser {
+  A String
+  B String
+
+  @@unique([A, B], map: "_RoleToUser_AB_unique")
+  @@index([B], map: "_RoleToUser_B_index")
+  @@map("_RoleToUser")
+}
+
+enum UserType {
+  FREE
+  PRO
 }

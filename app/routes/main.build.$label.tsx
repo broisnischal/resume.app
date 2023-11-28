@@ -58,6 +58,8 @@ import { Alert } from "~/components/ui/alert";
 import { Label } from "~/components/ui/label";
 import moment from "moment";
 import { useDebouncedCallback } from "use-debounce";
+import { EyeClosedIcon, EyeOpenIcon } from "@radix-ui/react-icons";
+import clsx from "clsx";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const resume = await prisma.resume.findUnique({
@@ -347,6 +349,10 @@ export default function Build() {
 		[],
 	);
 
+	const [displayState, setDisplayState] = useState<
+		"editor" | "both" | "preview"
+	>("both");
+
 	const [file, setFile] = useState("");
 
 	const handleInputChange = (
@@ -383,6 +389,36 @@ export default function Build() {
 
 	return (
 		<div>
+			{/* <div className="buttons">
+				<Button
+					className={clsx({
+						"bg-red-300": displayState === "both",
+					})}
+					variant={"outline"}
+					onClick={() => setDisplayState("both")}
+				>
+					both
+				</Button>
+				<Button
+					className={clsx({
+						"bg-red-300": displayState === "preview",
+					})}
+					variant={"outline"}
+					onClick={() => setDisplayState("preview")}
+				>
+					preview only
+				</Button>
+
+				<Button
+					className={clsx({
+						"bg-red-300": displayState === "editor",
+					})}
+					variant={"outline"}
+					onClick={() => setDisplayState("editor")}
+				>
+					editor only
+				</Button>
+			</div> */}
 			<div className="box flex gap-3 m-10">
 				<div className="flex flex-col gap-4  flex-1">
 					<Input type="file" className="w-fit" onChange={handleFileChange} />
@@ -428,153 +464,166 @@ export default function Build() {
 							className="hidden"
 						/>
 					</fetcher.Form>
-					<AlertDialog>
-						<AlertDialogTrigger>
-							<Button className="w-full">
-								Add Skill <Plus size={15} />
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>
-									Give the title of your skill?
-								</AlertDialogTitle>
-								<AlertDialogDescription>
-									You can add your title and level in percentage to show up your
-									skill.
-								</AlertDialogDescription>
+					<div className="flex flex-wrap gap-3">
+						<AlertDialog>
+							<AlertDialogTrigger>
+								<Button className="w-fit">
+									Add Skill <Plus size={15} />
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>
+										Give the title of your skill?
+									</AlertDialogTitle>
+									<AlertDialogDescription>
+										You can add your title and level in percentage to show up
+										your skill.
+									</AlertDialogDescription>
 
-								<Form
-									// onSubmit={(e) => {
-									// 	e.preventDefault();
-									// 	setSkills([
-									// 		...skills,
-									// 		{
-									// 			name: e.currentTarget.title.value,
-									// 			level: e.currentTarget.level.value,
-									// 		},
-									// 	]);
-									// }}
-									method="post"
-									id="add-skill"
-									className="flex flex-col gap-4"
-								>
-									<Input
-										placeholder="Enter your skill title, programming, singing, typescript"
-										name="title"
-									/>
-									<input
-										type="hidden"
-										name="resumeId"
-										defaultValue={resumeData.id}
-									/>
-									<Slider
-										className="w-full"
-										defaultValue={[60]}
-										max={100}
-										step={1}
-										name="level"
-									/>
-								</Form>
-							</AlertDialogHeader>
-
-							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
-								<AlertDialogAction form="add-skill" id="add-skill">
-									<Button
+									<Form
+										// onSubmit={(e) => {
+										// 	e.preventDefault();
+										// 	setSkills([
+										// 		...skills,
+										// 		{
+										// 			name: e.currentTarget.title.value,
+										// 			level: e.currentTarget.level.value,
+										// 		},
+										// 	]);
+										// }}
+										method="post"
 										id="add-skill"
-										name="_action"
-										value={"add-skill"}
+										className="flex flex-col gap-4"
+									>
+										<Input
+											placeholder="Enter your skill title, programming, singing, typescript"
+											name="title"
+										/>
+										<input
+											type="hidden"
+											name="resumeId"
+											defaultValue={resumeData.id}
+										/>
+										<Slider
+											className="w-full"
+											defaultValue={[60]}
+											max={100}
+											step={1}
+											name="level"
+										/>
+									</Form>
+								</AlertDialogHeader>
+
+								<AlertDialogFooter>
+									<AlertDialogCancel>Cancel</AlertDialogCancel>
+									<AlertDialogAction
 										form="add-skill"
-										variant={"outline"}
+										id="add-skill"
+										className=" p-0"
 									>
-										Add Skill <Plus size={15} />
-									</Button>
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+										<Button
+											id="add-skill"
+											name="_action"
+											value={"add-skill"}
+											form="add-skill"
+											variant={"outline"}
+										>
+											Add Skill <Plus size={15} />
+										</Button>
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
 
-					<AlertDialog>
-						<AlertDialogTrigger asChild>
-							<Button className="w-fit" variant={"outline"}>
-								Add Work <Plus size={15} />
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent className="w-[400px]">
-							<AlertDialogHeader>
-								<AlertDialogTitle>Are your work</AlertDialogTitle>
+						<AlertDialog>
+							<AlertDialogTrigger asChild>
+								<Button className="w-fit" variant={"outline"}>
+									Add Work <Plus size={15} />
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent className="w-[400px]">
+								<AlertDialogHeader>
+									<AlertDialogTitle>Are your work</AlertDialogTitle>
 
-								<AlertDialogDescription>
-									add your work{" "}
-									<strong className="text-primary">experience </strong>.
-								</AlertDialogDescription>
+									<AlertDialogDescription>
+										add your work{" "}
+										<strong className="text-primary">experience </strong>.
+									</AlertDialogDescription>
 
-								<Form
-									method="post"
-									id="add-work"
-									className="flex flex-col gap-4"
-								>
-									<Input
-										// onChange={(e) => setDeleteInput(e.target.value)}
-										type="text"
-										name="title"
-										placeholder="Work Title"
-									/>
-									<Input
-										// onChange={(e) => setDeleteInput(e.target.value)}
-										type="text"
-										name="company"
-										placeholder="Company Name"
-									/>
-									<Textarea name="desc" placeholder="Short work description" />
-									<Label htmlFor="startDate">Start Date</Label>
-									<Input
-										placeholder="Start Date"
-										type="date"
-										name="startDate"
-										id="startDate"
-										required
-									/>
-									<input
-										type="hidden"
-										name="resumeId"
-										defaultValue={resumeData.id}
-									/>
-									<Label htmlFor="endDate">End Date</Label>
-									<Input placeholder="End Date" type="date" name="endDate" />
-								</Form>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
-								{/* <Form method="post">
-									<input type="hidden" value={item.id} name="id" />
-									<Button
-										disabled={deleteInput !== `delete ${item.label}`}
-										type="submit"
-										name="_action"
-										value={"delete"}
-									>
-										{state === "submitting" ? (
-											<LoaderIcon size={14} className="animate-spin" />
-										) : (
-											"Delete"
-										)}
-									</Button>
-								</Form> */}
-								<AlertDialogAction form="add-skill" id="add-skill">
-									<Button
+									<Form
+										method="post"
 										id="add-work"
-										name="_action"
-										value={"add-work"}
-										form="add-work"
+										className="flex flex-col gap-4"
 									>
-										Save work
-									</Button>
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+										<Input
+											// onChange={(e) => setDeleteInput(e.target.value)}
+											type="text"
+											name="title"
+											placeholder="Work Title"
+										/>
+										<Input
+											// onChange={(e) => setDeleteInput(e.target.value)}
+											type="text"
+											name="company"
+											placeholder="Company Name"
+										/>
+										<Textarea
+											name="desc"
+											placeholder="Short work description"
+										/>
+										<Label htmlFor="startDate">Start Date</Label>
+										<Input
+											placeholder="Start Date"
+											type="date"
+											name="startDate"
+											id="startDate"
+											required
+										/>
+										<input
+											type="hidden"
+											name="resumeId"
+											defaultValue={resumeData.id}
+										/>
+										<Label htmlFor="endDate">End Date</Label>
+										<Input placeholder="End Date" type="date" name="endDate" />
+									</Form>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel>Cancel</AlertDialogCancel>
+									{/* <Form method="post">
+							<input type="hidden" value={item.id} name="id" />
+							<Button
+								disabled={deleteInput !== `delete ${item.label}`}
+								type="submit"
+								name="_action"
+								value={"delete"}
+							>
+								{state === "submitting" ? (
+									<LoaderIcon size={14} className="animate-spin" />
+								) : (
+									"Delete"
+								)}
+							</Button>
+						</Form> */}
+									<AlertDialogAction
+										className=" p-0"
+										form="add-skill"
+										id="add-skill"
+									>
+										<Button
+											id="add-work"
+											name="_action"
+											value={"add-work"}
+											form="add-work"
+										>
+											Save work
+										</Button>
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+					</div>
 
 					{works.map((item) => (
 						<Card className="w-full" key={item.id}>
@@ -616,10 +665,10 @@ export default function Build() {
 														value={"delete-work"}
 													>
 														{/* {state === "submitting" ? (
-															<LoaderIcon size={14} className="animate-spin" />
-														) : (
-															"Continue"
-														)} */}
+													<LoaderIcon size={14} className="animate-spin" />
+												) : (
+													"Continue"
+												)} */}
 														Continue
 													</Button>
 												</Form>
@@ -663,11 +712,12 @@ export default function Build() {
 								className="px-10 cursor-pointer bg-white/5 w-min"
 								key={index}
 							>
-								<h1>{item}</h1>
+								<h1>{item.toLocaleLowerCase()}</h1>
 							</div>
 						))}
 					</div>
 				</div>
+
 				<div className="preview-area h-fit py-10 flex-1 p-4 border rounded ">
 					<div className="heading flex flex-col gap-5 items-center my-10">
 						<Avatar className="w-24 h-24 -z-10">

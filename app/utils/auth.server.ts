@@ -16,6 +16,8 @@ const googleStrategy = new GoogleStrategy(
 		callbackURL: process.env.GOOGLE_CALLBACK_URL!,
 	},
 	async ({ accessToken, refreshToken, extraParams, profile }) => {
+		console.log(profile);
+
 		const existsUser = await prisma.user.findFirst({
 			where: {
 				connection: {
@@ -34,12 +36,13 @@ const googleStrategy = new GoogleStrategy(
 
 		const user = await prisma.user.create({
 			data: {
-				username: profile.displayName,
+				username: profile.displayName.replace(/\s/g, "").toLocaleLowerCase(),
 				email: profile.emails[0].value,
+				name: profile.displayName,
 				connection: {
 					create: {
 						providerId: profile.id,
-						providerName: "google",
+						providerName: profile.provider,
 					},
 				},
 			},

@@ -3,7 +3,7 @@ import type {
 	LoaderFunctionArgs,
 	MetaFunction,
 } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { Link, Outlet } from "@remix-run/react";
 import { Toaster } from "sonner";
 import { MainNav } from "~/components/items/Navbar";
 import { authenticator } from "~/utils/auth.server";
@@ -44,7 +44,10 @@ export default function Index() {
 			<MainNav />
 			<Outlet />
 			<div className="footer text-center py-2 mt-10">
-				Created with ❤️ by nees
+				Created with &lt;3 |{" "}
+				<strong>
+					<Link to={"/"}>resume.app</Link>
+				</strong>
 			</div>
 		</div>
 	);

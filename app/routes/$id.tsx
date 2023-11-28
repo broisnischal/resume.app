@@ -5,6 +5,7 @@ import { authenticator } from "~/utils/auth.server";
 import { prisma } from "~/utils/db.server";
 import { Link as LinkIcon, UserIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
+
 import {
 	EditIcon,
 	Facebook,
@@ -22,10 +23,12 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
 import moment from "moment";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const id = params.id!;
@@ -103,7 +106,7 @@ export default function Page() {
 	const { skills, works, resume } = data;
 
 	return (
-		<div>
+		<div className="print">
 			{error ? (
 				<div className="flex justify-center flex-col gap-5 min-h-screen  items-center">
 					<Alert className="w-[300px]" variant={"destructive"}>
@@ -117,7 +120,7 @@ export default function Page() {
 					</Link>
 				</div>
 			) : (
-				<div className="max-w-[1000px] m-auto my-[5rem]">
+				<div className="max-w-[1000px] m-auto px-[3rem] my-[5rem] ">
 					<div className="flex flex-col gap-5">
 						<div className="user-info flex items-center justify-center flex-col gap-3 mb-[3rem]">
 							{/* <div className="avatar">
@@ -129,8 +132,9 @@ export default function Page() {
 							<h1
 								style={{
 									WebkitBackgroundClip: "text",
+									display: "inline-block",
 								}}
-								className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary dark:from-white dark:to-gray-500"
+								className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-black dark:from-white dark:to-gray-500"
 							>
 								{data.resume?.name}
 							</h1>
@@ -139,7 +143,7 @@ export default function Page() {
 							{data.resume?.description}
 						</p> */}
 
-							<p className="balance mx-auto max-w-[700px] text-zinc-500 md:text-xl dark:text-zinc-400">
+							<p className="balance mx-auto max-w-[700px] text-zinc-500 md:text-xl dark:text-zinc-400 text-center">
 								{resume?.description}
 							</p>
 							<h2
@@ -163,24 +167,35 @@ export default function Page() {
 							<div className="skills w-full  flex-1">
 								{skills.map((item) => (
 									<div key={item.id} className="mt-4 ">
-										<p className="font-medium mb-2 capitalize">{item.name}</p>
+										<div className="flex items-center justify-between">
+											<p className="font-medium mb-2 capitalize">{item.name}</p>
+											<span className="ml-auto">{item.value}%</span>
+										</div>
 										<Progress value={item.value} className="-z-10" />
 									</div>
 								))}
 							</div>
 
-							<div className="works flex-1 flex flex-wrap gap-4">
+							<div className="works flex-1 flex flex-wrap gap-4 items-start">
 								{works.map((item) => (
-									<Card key={item.id}>
+									<Card key={item.id} className="min-w-full">
 										<CardHeader>
 											<CardTitle>{item.title}</CardTitle>
 											<CardDescription>{item.desc}</CardDescription>
+											<strong>{item.company}</strong>
+
+											<p>
+												from{" "}
+												<strong>
+													{moment(item.startDate).format("MMM YYYY")}
+												</strong>{" "}
+												to{" "}
+												<strong>
+													{moment(item.endDate).format("MMM YYYY")}
+												</strong>
+											</p>
 										</CardHeader>
-										<CardContent>
-											<strong>{item.company}</strong> |{" "}
-											{moment(item.startDate).format("LL")} -{" "}
-											{moment(item.endDate).format("LL")}
-										</CardContent>
+										{/* <CardContent></CardContent> */}
 									</Card>
 								))}
 							</div>
