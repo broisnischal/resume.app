@@ -92,16 +92,21 @@ authenticator.use(
 			callbackURL: process.env.GITHUB_CALLBACK_URL!,
 		},
 		async ({ accessToken, refreshToken, extraParams, profile }) => {
+			console.log(profile);
+
 			const existsUser = await prisma.user.findFirst({
 				where: {
 					connection: {
 						some: {
 							providerId: profile.id,
+							providerName: "github",
 						},
 					},
 					email: profile.emails[0].value,
 				},
 			});
+
+			console.log(existsUser);
 
 			if (existsUser) {
 				console.log(existsUser);

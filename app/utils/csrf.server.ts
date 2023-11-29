@@ -5,7 +5,7 @@ const cookie = createCookie("csrf", {
 	path: "/",
 	httpOnly: true,
 	secure: process.env.NODE_ENV === "production",
-	sameSite: "none",
+	sameSite: "lax",
 	secrets: process.env.SESSION_SECRET?.split(","),
 });
 

@@ -407,35 +407,45 @@ export default function Build() {
 	const fetcher = useFetcher({ key: "resume" });
 	const tagfetcher = useFetcher({ key: "tags" });
 
+	// const handleTagClick = (tag: string) => {
+	// 	if (selectedTags.includes(tag)) {
+	// 		// setSelectedTags((prevTags) =>
+	// 		// prevTags.filter((selectedTag) => selectedTag !== tag),
+	// 		// );
+	// 		console.log(tag);
+
+	// 		tagfetcher.submit(
+	// 			{
+	// 				_action: "delete-tag",
+	// 				tag,
+	// 				label: resumeData.label,
+	// 			},
+	// 			{
+	// 				method: "post",
+	// 			},
+	// 		);
+	// 	} else {
+	// 		setSelectedTags((prevTags) => [...prevTags, tag]);
+	// 		tagfetcher.submit(
+	// 			{
+	// 				_action: "add-tag",
+	// 				tag,
+	// 				label: resumeData.label,
+	// 			},
+	// 			{
+	// 				method: "post",
+	// 			},
+	// 		);
+	// 	}
+	// };
+
 	const handleTagClick = (tag: string) => {
 		if (selectedTags.includes(tag)) {
-			// setSelectedTags((prevTags) =>
-			// prevTags.filter((selectedTag) => selectedTag !== tag),
-			// );
-			console.log(tag);
-
-			tagfetcher.submit(
-				{
-					_action: "delete-tag",
-					tag,
-					label: resumeData.label,
-				},
-				{
-					method: "post",
-				},
+			setSelectedTags((prevTags) =>
+				prevTags.filter((selectedTag) => selectedTag !== tag),
 			);
 		} else {
 			setSelectedTags((prevTags) => [...prevTags, tag]);
-			tagfetcher.submit(
-				{
-					_action: "add-tag",
-					tag,
-					label: resumeData.label,
-				},
-				{
-					method: "post",
-				},
-			);
 		}
 	};
 
